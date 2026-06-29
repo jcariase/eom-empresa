@@ -12,6 +12,7 @@ type KPI = {
   unidad: 'porcentaje' | 'pesos' | 'dias' | 'numero' | 'horas'
   meta: number
   actual: number
+  ratio: string
   descripcion: string
   estandar: boolean
 }
@@ -25,20 +26,20 @@ const DIM_COLORS: Record<string, string> = {
 }
 
 const KPIS_ESTANDAR: Omit<KPI, 'id' | 'actual'>[] = [
-  { nombre: 'Ingresos del mes', dim: 'Finanzas', unidad: 'pesos', meta: 0, descripcion: 'Total de ingresos facturados en el mes', estandar: true },
-  { nombre: 'Margen bruto', dim: 'Finanzas', unidad: 'porcentaje', meta: 40, descripcion: '(Ingresos - Costo directo) / Ingresos × 100', estandar: true },
-  { nombre: 'Días de cobranza (DSO)', dim: 'Finanzas', unidad: 'dias', meta: 30, descripcion: 'Promedio de días para cobrar una factura', estandar: true },
-  { nombre: 'Gastos fijos vs presupuesto', dim: 'Finanzas', unidad: 'porcentaje', meta: 100, descripcion: 'Gastos fijos reales vs presupuestados', estandar: true },
-  { nombre: 'Entregas a tiempo', dim: 'Operaciones', unidad: 'porcentaje', meta: 95, descripcion: '% de entregas o servicios entregados en la fecha prometida', estandar: true },
-  { nombre: 'Tiempo respuesta a clientes', dim: 'Operaciones', unidad: 'horas', meta: 4, descripcion: 'Promedio de horas para responder una solicitud de cliente', estandar: true },
-  { nombre: 'Órdenes sin error', dim: 'Operaciones', unidad: 'porcentaje', meta: 98, descripcion: '% de órdenes o servicios entregados sin reclamo', estandar: true },
-  { nombre: 'Capacidad utilizada', dim: 'Operaciones', unidad: 'porcentaje', meta: 80, descripcion: '% de capacidad operacional en uso vs disponible', estandar: true },
-  { nombre: 'Cumplimiento de compromisos', dim: 'Personas', unidad: 'porcentaje', meta: 90, descripcion: '% de compromisos del equipo cerrados en plazo', estandar: true },
-  { nombre: 'Ausentismo', dim: 'Personas', unidad: 'porcentaje', meta: 3, descripcion: '% de días perdidos por ausentismo sobre total de días hábiles', estandar: true },
-  { nombre: 'Rotación anual', dim: 'Personas', unidad: 'porcentaje', meta: 10, descripcion: '% de personas que dejaron la empresa en los últimos 12 meses', estandar: true },
-  { nombre: 'Avance plan 90 días', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, descripcion: '% de acciones del plan completadas', estandar: true },
-  { nombre: 'Decisiones delegadas', dim: 'Liderazgo', unidad: 'porcentaje', meta: 70, descripcion: '% de decisiones operacionales tomadas sin el dueño', estandar: true },
-  { nombre: 'Reuniones con acuerdos cerrados', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, descripcion: '% de reuniones que terminan con acuerdos escritos y dueño', estandar: true },
+  { nombre: 'Ingresos del mes', dim: 'Finanzas', unidad: 'pesos', meta: 0, ratio: 'Suma de ventas facturadas en el mes', descripcion: 'Suma todos los ingresos facturados en el período. Fuente: libro de ventas o sistema de facturación. No incluir anticipos ni notas de crédito pendientes.', estandar: true },
+  { nombre: 'Margen bruto', dim: 'Finanzas', unidad: 'porcentaje', meta: 40, ratio: '(Ingresos − Costo directo) / Ingresos × 100', descripcion: 'Mide cuánto queda de cada peso vendido después de pagar lo que cuesta producir o entregar. Costo directo incluye materiales, mano de obra directa y subcontratos. No incluir sueldos administrativos ni arriendo.', estandar: true },
+  { nombre: 'Días de cobranza (DSO)', dim: 'Finanzas', unidad: 'dias', meta: 30, ratio: '(Cuentas por cobrar / Ingresos del mes) × 30', descripcion: 'Cuántos días en promedio tardas en cobrar una factura. Un DSO alto significa que estás financiando a tus clientes. Fuente: saldo de cuentas por cobrar al cierre del mes.', estandar: true },
+  { nombre: 'Gastos fijos vs presupuesto', dim: 'Finanzas', unidad: 'porcentaje', meta: 100, ratio: '(Gastos fijos reales / Gastos fijos presupuestados) × 100', descripcion: 'Compara lo que gastaste en fijos vs lo que planificaste. Sobre 100% significa que gastaste más de lo presupuestado. Incluir arriendo, sueldos admin, servicios básicos y seguros.', estandar: true },
+  { nombre: 'Entregas a tiempo', dim: 'Operaciones', unidad: 'porcentaje', meta: 95, ratio: '(Entregas en fecha / Total entregas) × 100', descripcion: 'Cuenta cuántas entregas o servicios se completaron en la fecha prometida al cliente, sobre el total del mes. Una entrega cuenta como "a tiempo" si llegó en o antes de la fecha acordada.', estandar: true },
+  { nombre: 'Tiempo respuesta a clientes', dim: 'Operaciones', unidad: 'horas', meta: 4, ratio: 'Promedio de horas entre solicitud y primera respuesta', descripcion: 'Suma las horas de espera de todas las solicitudes recibidas y divide por el número de solicitudes. Solo cuenta días hábiles. Una respuesta es cualquier contacto real, no una respuesta automática.', estandar: true },
+  { nombre: 'Órdenes sin error', dim: 'Operaciones', unidad: 'porcentaje', meta: 98, ratio: '(Órdenes sin reclamo / Total órdenes) × 100', descripcion: 'Mide la calidad de entrega. Una orden "con error" es cualquier orden que generó un reclamo, devolución o retrabajo. Fuente: registro de reclamos o libro de servicio.', estandar: true },
+  { nombre: 'Capacidad utilizada', dim: 'Operaciones', unidad: 'porcentaje', meta: 80, ratio: '(Horas o unidades producidas / Capacidad máxima) × 100', descripcion: 'Qué porcentaje de tu capacidad operacional real estás usando. Capacidad máxima es lo que podrías producir o entregar si todos los recursos estuvieran al 100% en días hábiles del mes.', estandar: true },
+  { nombre: 'Cumplimiento de compromisos', dim: 'Personas', unidad: 'porcentaje', meta: 90, ratio: '(Compromisos cerrados en plazo / Total compromisos) × 100', descripcion: 'De todos los compromisos que el equipo asumió en reuniones del mes, cuántos se cerraron antes o en la fecha acordada. Requiere llevar registro de acuerdos con fecha y responsable.', estandar: true },
+  { nombre: 'Ausentismo', dim: 'Personas', unidad: 'porcentaje', meta: 3, ratio: '(Días perdidos / Días hábiles totales del equipo) × 100', descripcion: 'Días perdidos incluye ausencias injustificadas, licencias médicas y atrasos equivalentes a jornada. Días hábiles totales = personas × días hábiles del mes. Meta de 3% es estándar industria.', estandar: true },
+  { nombre: 'Rotación anual', dim: 'Personas', unidad: 'porcentaje', meta: 10, ratio: '(Personas que salieron en 12 meses / Dotación promedio) × 100', descripcion: 'Cuántas personas dejaron la empresa en los últimos 12 meses, sobre el promedio de dotación del período. Incluye renuncias y despidos. No incluir jubilaciones o fin de contrato temporal planificado.', estandar: true },
+  { nombre: 'Avance plan 90 días', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, ratio: '(Acciones completadas / Total acciones del plan) × 100', descripcion: 'Porcentaje de acciones del plan de 90 días marcadas como completadas. Este KPI se calcula automáticamente desde el módulo de Plan. Actualízalo manualmente si no usas ese módulo.', estandar: true },
+  { nombre: 'Decisiones delegadas', dim: 'Liderazgo', unidad: 'porcentaje', meta: 70, ratio: '(Decisiones tomadas sin el dueño / Total decisiones operacionales) × 100', descripcion: 'Lleva un registro simple durante el mes de cuántas decisiones operacionales importantes pasaron por ti vs cuántas las tomó tu equipo solo. Operacional excluye decisiones estratégicas o de inversión mayor.', estandar: true },
+  { nombre: 'Reuniones con acuerdos cerrados', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, ratio: '(Reuniones con acta de acuerdos / Total reuniones) × 100', descripcion: 'De todas las reuniones del mes, cuántas terminaron con acuerdos escritos que incluyen: qué se decidió, quién es responsable y para cuándo. Una reunión sin acuerdo escrito cuenta como sin cierre.', estandar: true },
 ]
 
 const DIMS = ['Todos', 'Finanzas', 'Operaciones', 'Personas', 'Liderazgo']
@@ -86,6 +87,7 @@ export default function KPIsPage() {
   const [formUnidad, setFormUnidad] = useState<string>('porcentaje')
   const [formMeta, setFormMeta] = useState('')
   const [formDesc, setFormDesc] = useState('')
+  const [formRatio, setFormRatio] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -100,7 +102,7 @@ export default function KPIsPage() {
         setKpis(kpisGuardados as KPI[])
       } else {
         // Cargar estándar
-        const iniciales: KPI[] = KPIS_ESTANDAR.map(k => ({...k, id: crypto.randomUUID(), actual: 0}))
+        const iniciales: KPI[] = KPIS_ESTANDAR.map(k => ({...k, id: crypto.randomUUID(), actual: 0, ratio: k.ratio || ''}))
         await supabase.from('kpis_empresa').insert(iniciales.map(k => ({...k, user_id: user.id})))
         setKpis(iniciales)
       }
@@ -149,12 +151,13 @@ export default function KPIsPage() {
       unidad: formUnidad as any,
       meta: parseFloat(formMeta) || 0,
       actual: 0,
+      ratio: formRatio,
       descripcion: formDesc,
       estandar: false,
     }
     await supabase.from('kpis_empresa').insert({...nuevo, user_id: user.id})
     setKpis(prev => [...prev, nuevo])
-    setFormNombre(''); setFormDim('Operaciones'); setFormUnidad('porcentaje'); setFormMeta(''); setFormDesc('')
+    setFormNombre(''); setFormDim('Operaciones'); setFormUnidad('porcentaje'); setFormMeta(''); setFormDesc(''); setFormRatio('')
     setShowAgregar(false)
     setSaving(false)
   }
@@ -247,6 +250,13 @@ export default function KPIsPage() {
         .biblioteca-item-nombre{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
         .biblioteca-item-desc{font-size:11px;color:var(--text2)}
         .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
+        .tooltip-wrap{position:relative;display:inline-flex;align-items:center}
+        .tooltip-icon{width:14px;height:14px;border-radius:50%;border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:var(--text2);cursor:help;flex-shrink:0;font-family:'DM Mono',monospace;margin-left:6px;transition:all 0.15s}
+        .tooltip-icon:hover{border-color:var(--amber);color:var(--amber)}
+        .tooltip-box{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:260px;background:#1A2035;border:1px solid var(--border2);padding:12px 14px;font-size:12px;color:var(--text3);line-height:1.6;z-index:200;pointer-events:none;opacity:0;transition:opacity 0.15s;border-top:2px solid var(--amber)}
+        .tooltip-wrap:hover .tooltip-box{opacity:1}
+        .tooltip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1A2035}
+        .kpi-ratio{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.4;display:flex;align-items:flex-start;gap:4px}
         @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.kpis-grid{grid-template-columns:1fr}.panel{width:100%}.semaforo-bar{grid-template-columns:1fr 1fr}}
       `}</style>
 
@@ -315,8 +325,14 @@ export default function KPIsPage() {
               return (
                 <div key={kpi.id} className="kpi-card">
                   <div className="kpi-dim" style={{color:dimColor, borderColor:dimColor+'44', background:dimColor+'11'}}>{kpi.dim}</div>
-                  <div className="kpi-nombre">{kpi.nombre}</div>
-                  <div className="kpi-desc">{kpi.descripcion}</div>
+                  <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8}}>
+                    <div className="kpi-nombre">{kpi.nombre}</div>
+                    <div className="tooltip-wrap">
+                      <div className="tooltip-icon">i</div>
+                      <div className="tooltip-box">{kpi.descripcion}</div>
+                    </div>
+                  </div>
+                  {kpi.ratio && <div className="kpi-ratio">= {kpi.ratio}</div>}
 
                   <div className="kpi-valores">
                     <div>
@@ -421,8 +437,12 @@ export default function KPIsPage() {
               <input className="field" type="number" placeholder="Ej: 95" value={formMeta} onChange={e=>setFormMeta(e.target.value)} />
             </div>
             <div className="field-group">
+              <label className="field-label">Fórmula / Ratio (opcional)</label>
+              <input className="field" placeholder="Ej: (A / B) × 100" value={formRatio} onChange={e=>setFormRatio(e.target.value)} />
+            </div>
+            <div className="field-group">
               <label className="field-label">Descripción (opcional)</label>
-              <input className="field" placeholder="Qué mide este indicador" value={formDesc} onChange={e=>setFormDesc(e.target.value)} />
+              <input className="field" placeholder="Cómo se calcula y de dónde sacar el dato" value={formDesc} onChange={e=>setFormDesc(e.target.value)} />
             </div>
             <button className="btn-primary" style={{width:'100%',padding:'12px'}} onClick={crearKPI} disabled={!formNombre||saving}>
               {saving ? 'Guardando...' : 'Agregar KPI →'}
