@@ -486,7 +486,7 @@ export default function Onboarding() {
               })}
             </div>
 
-            <p style={{fontSize:'13px',color:'var(--text2)',marginBottom:'20px',fontFamily:"'DM Mono', monospace",textTransform:'uppercase',letterSpacing:'0.1em',fontSize:'10px'}}>Focos prioritarios — 3 áreas con mayor impacto</p>
+            <p style={{fontSize:'10px',color:'var(--text2)',marginBottom:'20px',fontFamily:"'DM Mono', monospace",textTransform:'uppercase',letterSpacing:'0.1em'}}>Focos prioritarios — 3 áreas con mayor impacto</p>
 
             {plan.map((p,i) => (
               <div key={i} className="plan-item">
