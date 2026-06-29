@@ -77,6 +77,13 @@ export default function Onboarding() {
   const [retiro, setRetiro] = useState('')
   const [clientes, setClientes] = useState('')
 
+  function handleMiles(val: string, setter: (v: string) => void) {
+    const raw = val.replace(/\./g, '').replace(/\D/g, '')
+    if (raw === '') { setter(''); return }
+    setter(parseInt(raw).toLocaleString('es-CL'))
+  }
+  function parseMiles(val: string) { return parseInt(val.replace(/\./g,'')) || 0 }
+
   // Paso 2 — Areas
   const [areas, setAreas] = useState<string[]>([])
   const [areaInput, setAreaInput] = useState('')
@@ -118,10 +125,10 @@ export default function Onboarding() {
       nombre,
       rubro,
       num_personas: parseInt(personas),
-      ingresos_mensual: parseInt(ingresos.replace(/\./g,'')),
-      costo_directo_mensual: parseInt(costoDirecto.replace(/\./g,'')),
-      gastos_fijos_mensual: parseInt(gastosFijos.replace(/\./g,'')),
-      retiro_dueno_mensual: parseInt(retiro.replace(/\./g,'')),
+      ingresos_mensual: parseMiles(ingresos),
+      costo_directo_mensual: parseMiles(costoDirecto),
+      gastos_fijos_mensual: parseMiles(gastosFijos),
+      retiro_dueno_mensual: parseMiles(retiro),
       clientes_activos: parseInt(clientes),
       areas,
       ciclo_inicio: new Date().toISOString(),
@@ -165,10 +172,10 @@ export default function Onboarding() {
   const completo = totalResp === PREGUNTAS.length
 
   // Resultado financiero preview
-  const ing = parseInt(ingresos.replace(/\./g,''))||0
-  const cd = parseInt(costoDirecto.replace(/\./g,''))||0
-  const gf = parseInt(gastosFijos.replace(/\./g,''))||0
-  const ret = parseInt(retiro.replace(/\./g,''))||0
+  const ing = parseMiles(ingresos)
+  const cd = parseMiles(costoDirecto)
+  const gf = parseMiles(gastosFijos)
+  const ret = parseMiles(retiro)
   const margenBruto = ing - cd
   const resultadoOp = margenBruto - gf
   const resultadoReal = resultadoOp - ret
@@ -296,22 +303,22 @@ export default function Onboarding() {
             <div className="field-row">
               <div className="field-group">
                 <label className="field-label">Ingresos mensuales promedio ($) *</label>
-                <input className="field" placeholder="Ej: 45.000.000" value={ingresos} onChange={e=>setIngresos(e.target.value)} />
+                <input className="field" placeholder="Ej: 45.000.000" value={ingresos} onChange={e=>handleMiles(e.target.value,setIngresos)} />
               </div>
               <div className="field-group">
                 <label className="field-label">Costo directo mensual promedio ($) *</label>
-                <input className="field" placeholder="Lo que gastas para producir/entregar" value={costoDirecto} onChange={e=>setCostoDirecto(e.target.value)} />
+                <input className="field" placeholder="Lo que gastas para producir/entregar" value={costoDirecto} onChange={e=>handleMiles(e.target.value,setCostoDirecto)} />
               </div>
             </div>
 
             <div className="field-row">
               <div className="field-group">
                 <label className="field-label">Gastos fijos mensuales ($) *</label>
-                <input className="field" placeholder="Arriendo, sueldos admin, servicios" value={gastosFijos} onChange={e=>setGastosFijos(e.target.value)} />
+                <input className="field" placeholder="Arriendo, sueldos admin, servicios" value={gastosFijos} onChange={e=>handleMiles(e.target.value,setGastosFijos)} />
               </div>
               <div className="field-group">
                 <label className="field-label">Retiro del dueño mensual ($) *</label>
-                <input className="field" placeholder="Lo que te pagas a ti mismo" value={retiro} onChange={e=>setRetiro(e.target.value)} />
+                <input className="field" placeholder="Lo que te pagas a ti mismo" value={retiro} onChange={e=>handleMiles(e.target.value,setRetiro)} />
               </div>
             </div>
 
