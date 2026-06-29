@@ -26,20 +26,76 @@ const DIM_COLORS: Record<string, string> = {
 }
 
 const KPIS_ESTANDAR: Omit<KPI, 'id' | 'actual'>[] = [
-  { nombre: 'Ingresos por ventas', dim: 'Finanzas', unidad: 'pesos', meta: 0, ratio: 'Suma de ventas facturadas en el mes', descripcion: 'Suma todos los ingresos facturados en el período. Fuente: libro de ventas o sistema de facturación. No incluir anticipos ni notas de crédito pendientes.', estandar: true },
-  { nombre: 'Margen bruto', dim: 'Finanzas', unidad: 'porcentaje', meta: 40, ratio: '(Ingresos − Costo directo) / Ingresos × 100', descripcion: 'Mide cuánto queda de cada peso vendido después de pagar lo que cuesta producir o entregar. Costo directo incluye materiales, mano de obra directa y subcontratos. No incluir sueldos administrativos ni arriendo.', estandar: true },
-  { nombre: 'Días de cobranza (DSO)', dim: 'Finanzas', unidad: 'dias', meta: 30, ratio: '(Cuentas por cobrar / Ingresos del mes) × 30', descripcion: 'Cuántos días en promedio tardas en cobrar una factura. Un DSO alto significa que estás financiando a tus clientes. Fuente: saldo de cuentas por cobrar al cierre del mes.', estandar: true },
-  { nombre: 'Gastos fijos vs presupuesto', dim: 'Finanzas', unidad: 'porcentaje', meta: 100, ratio: '(Gastos fijos reales / Gastos fijos presupuestados) × 100', descripcion: 'Compara lo que gastaste en fijos vs lo que planificaste. Sobre 100% significa que gastaste más de lo presupuestado. Incluir arriendo, sueldos admin, servicios básicos y seguros.', estandar: true },
-  { nombre: 'Entregas a tiempo', dim: 'Operaciones', unidad: 'porcentaje', meta: 95, ratio: '(Entregas en fecha / Total entregas) × 100', descripcion: 'Cuenta cuántas entregas o servicios se completaron en la fecha prometida al cliente, sobre el total del mes. Una entrega cuenta como "a tiempo" si llegó en o antes de la fecha acordada.', estandar: true },
-  { nombre: 'Tiempo respuesta a clientes', dim: 'Operaciones', unidad: 'horas', meta: 4, ratio: 'Promedio de horas entre solicitud y primera respuesta', descripcion: 'Suma las horas de espera de todas las solicitudes recibidas y divide por el número de solicitudes. Solo cuenta días hábiles. Una respuesta es cualquier contacto real, no una respuesta automática.', estandar: true },
-  { nombre: 'Órdenes sin error', dim: 'Operaciones', unidad: 'porcentaje', meta: 98, ratio: '(Órdenes sin reclamo / Total órdenes) × 100', descripcion: 'Mide la calidad de entrega. Una orden "con error" es cualquier orden que generó un reclamo, devolución o retrabajo. Fuente: registro de reclamos o libro de servicio.', estandar: true },
-  { nombre: 'Capacidad utilizada', dim: 'Operaciones', unidad: 'porcentaje', meta: 80, ratio: '(Horas o unidades producidas / Capacidad máxima) × 100', descripcion: 'Qué porcentaje de tu capacidad operacional real estás usando. Capacidad máxima es lo que podrías producir o entregar si todos los recursos estuvieran al 100% en días hábiles del mes.', estandar: true },
-  { nombre: 'Cumplimiento de compromisos', dim: 'Personas', unidad: 'porcentaje', meta: 90, ratio: '(Compromisos cerrados en plazo / Total compromisos) × 100', descripcion: 'De todos los compromisos que el equipo asumió en reuniones del mes, cuántos se cerraron antes o en la fecha acordada. Requiere llevar registro de acuerdos con fecha y responsable.', estandar: true },
-  { nombre: 'Ausentismo', dim: 'Personas', unidad: 'porcentaje', meta: 3, ratio: '(Días perdidos / Días hábiles totales del equipo) × 100', descripcion: 'Días perdidos incluye ausencias injustificadas, licencias médicas y atrasos equivalentes a jornada. Días hábiles totales = personas × días hábiles del mes. Meta de 3% es estándar industria.', estandar: true },
-  { nombre: 'Rotación anual', dim: 'Personas', unidad: 'porcentaje', meta: 10, ratio: '(Personas que salieron en 12 meses / Dotación promedio) × 100', descripcion: 'Cuántas personas dejaron la empresa en los últimos 12 meses, sobre el promedio de dotación del período. Incluye renuncias y despidos. No incluir jubilaciones o fin de contrato temporal planificado.', estandar: true },
-  { nombre: 'Avance plan 90 días', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, ratio: '(Acciones completadas / Total acciones del plan) × 100', descripcion: 'Porcentaje de acciones del plan de 90 días marcadas como completadas. Este KPI se calcula automáticamente desde el módulo de Plan. Actualízalo manualmente si no usas ese módulo.', estandar: true },
-  { nombre: 'Decisiones delegadas', dim: 'Liderazgo', unidad: 'porcentaje', meta: 70, ratio: '(Decisiones tomadas sin el dueño / Total decisiones operacionales) × 100', descripcion: 'Lleva un registro simple durante el mes de cuántas decisiones operacionales importantes pasaron por ti vs cuántas las tomó tu equipo solo. Operacional excluye decisiones estratégicas o de inversión mayor.', estandar: true },
-  { nombre: 'Reuniones con acuerdos cerrados', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, ratio: '(Reuniones con acta de acuerdos / Total reuniones) × 100', descripcion: 'De todas las reuniones del mes, cuántas terminaron con acuerdos escritos que incluyen: qué se decidió, quién es responsable y para cuándo. Una reunión sin acuerdo escrito cuenta como sin cierre.', estandar: true },
+  {
+    nombre: 'Ingresos por ventas', dim: 'Finanzas', unidad: 'pesos', meta: 0, estandar: true,
+    ratio: 'Suma de facturas emitidas en el mes',
+    descripcion: '¿Qué es? El total de dinero que tu empresa generó por ventas en el mes, antes de cualquier descuento o costo.\n\n¿Cómo se calcula? Suma todas las facturas o boletas emitidas en el período. No incluyas anticipos recibidos ni notas de crédito pendientes.\n\n¿De dónde sacar el dato? Libro de ventas, sistema de facturación electrónica (SII), o planilla de ingresos.',
+  },
+  {
+    nombre: 'Margen bruto', dim: 'Finanzas', unidad: 'porcentaje', meta: 40, estandar: true,
+    ratio: '(Ingresos − Costo directo) ÷ Ingresos × 100',
+    descripcion: '¿Qué es? Cuánto queda de cada peso vendido después de pagar lo que cuesta producir o entregar el producto o servicio. Un margen bruto del 40% significa que de cada $100 vendidos, $40 quedan para pagar los gastos fijos y generar utilidad.\n\n¿Cómo se calcula? Costo directo incluye materiales, insumos, mano de obra directa y subcontratos. No incluyas sueldos administrativos, arriendo ni servicios básicos.\n\n¿De dónde sacar el dato? Facturas de compra de insumos + liquidaciones de sueldo del personal de producción.',
+  },
+  {
+    nombre: 'Días de cobranza (DSO)', dim: 'Finanzas', unidad: 'dias', meta: 30, estandar: true,
+    ratio: '(Cuentas por cobrar ÷ Ingresos del mes) × 30',
+    descripcion: '¿Qué es? Cuántos días en promedio tardas en cobrar una factura desde que fue emitida. Un DSO de 60 días significa que le estás dando crédito gratuito a tus clientes por 2 meses.\n\n¿Cómo se calcula? Toma el saldo total de cuentas por cobrar al cierre del mes y divídelo por los ingresos del mes. Multiplica por 30.\n\n¿De dónde sacar el dato? Balance de cuentas por cobrar (tu contador lo tiene). Meta recomendada: menos de 30 días.',
+  },
+  {
+    nombre: 'Gastos fijos vs presupuesto', dim: 'Finanzas', unidad: 'porcentaje', meta: 100, estandar: true,
+    ratio: '(Gastos fijos reales ÷ Gastos fijos presupuestados) × 100',
+    descripcion: '¿Qué es? Compara cuánto gastaste en costos fijos versus lo que habías planificado. Un resultado sobre 100% significa que gastaste más de lo presupuestado.\n\n¿Cómo se calcula? Suma arriendo, sueldos administrativos, servicios básicos, seguros y otros fijos del mes. Divídelo por lo que tenías presupuestado para esos mismos ítems.\n\n¿De dónde sacar el dato? Planilla de gastos fijos mensual. Si no tienes presupuesto, el promedio de los últimos 3 meses es tu línea base.',
+  },
+  {
+    nombre: 'Entregas a tiempo', dim: 'Operaciones', unidad: 'porcentaje', meta: 95, estandar: true,
+    ratio: '(Entregas en fecha prometida ÷ Total entregas) × 100',
+    descripcion: '¿Qué es? Mide qué porcentaje de tus entregas o servicios se completaron en la fecha que le prometiste al cliente. Es el indicador más directo de confiabilidad operacional.\n\n¿Cómo se calcula? Cuenta cuántas órdenes del mes se entregaron en o antes de la fecha acordada. Divídelo por el total de órdenes del mes.\n\n¿De dónde sacar el dato? Registro de órdenes de trabajo o despacho. Si no llevas registro, empieza con una planilla simple: orden, fecha prometida, fecha real.',
+  },
+  {
+    nombre: 'Tiempo respuesta a clientes', dim: 'Operaciones', unidad: 'horas', meta: 4, estandar: true,
+    ratio: 'Suma de horas de espera ÷ Número de solicitudes',
+    descripcion: '¿Qué es? Cuántas horas pasan en promedio entre que un cliente hace una solicitud y tu empresa da una primera respuesta real. No una respuesta automática — una respuesta humana.\n\n¿Cómo se calcula? Registra la hora de entrada de cada solicitud y la hora de tu primera respuesta. Promedia esas diferencias al final del mes. Solo cuenta horas hábiles.\n\n¿De dónde sacar el dato? Historial de WhatsApp, email o sistema de tickets. Una semana de medición ya te da un número representativo.',
+  },
+  {
+    nombre: 'Órdenes sin error', dim: 'Operaciones', unidad: 'porcentaje', meta: 98, estandar: true,
+    ratio: '(Órdenes sin reclamo ÷ Total órdenes) × 100',
+    descripcion: '¿Qué es? Qué porcentaje de tus entregas o servicios no generaron reclamo, devolución ni retrabajo. Una orden "con error" es cualquier orden que el cliente devolvió o que tuviste que rehacer.\n\n¿Cómo se calcula? Cuenta las órdenes del mes que no tuvieron ningún problema. Divídelo por el total de órdenes.\n\n¿De dónde sacar el dato? Registro de reclamos o libro de servicio técnico. Si no llevas registro, los reclamos que recuerdas del mes son un buen punto de partida.',
+  },
+  {
+    nombre: 'Capacidad utilizada', dim: 'Operaciones', unidad: 'porcentaje', meta: 80, estandar: true,
+    ratio: '(Producción real ÷ Capacidad máxima) × 100',
+    descripcion: '¿Qué es? Qué porcentaje de tu capacidad operacional disponible estás realmente usando. Sobre 90% puede significar que estás saturado y arriesgando calidad. Bajo 60% puede significar recursos ociosos.\n\n¿Cómo se calcula? Define tu capacidad máxima (horas máquina, horas hombre o unidades posibles en días hábiles). Mide cuánto produjiste o entregaste realmente.\n\n¿De dónde sacar el dato? Control de producción, planillas de turnos o registro de equipos operativos. La meta de 80% es el estándar internacional para industrias de servicio y manufactura liviana.',
+  },
+  {
+    nombre: 'Cumplimiento de compromisos', dim: 'Personas', unidad: 'porcentaje', meta: 90, estandar: true,
+    ratio: '(Compromisos cerrados en plazo ÷ Total compromisos) × 100',
+    descripcion: '¿Qué es? De todos los compromisos que el equipo asumió en reuniones del mes, cuántos se cerraron antes o en la fecha acordada. Es el indicador más claro de cultura de ejecución.\n\n¿Cómo se calcula? Requiere llevar registro de acuerdos con responsable y fecha. Al final del mes, cuenta cuántos se cerraron a tiempo sobre el total.\n\n¿De dónde sacar el dato? Actas de reunión o el módulo de Reuniones de EOM. Si no llevas actas, empieza esta semana — una planilla simple con 3 columnas (qué, quién, cuándo) es suficiente.',
+  },
+  {
+    nombre: 'Ausentismo', dim: 'Personas', unidad: 'porcentaje', meta: 3, estandar: true,
+    ratio: '(Días perdidos ÷ Días hábiles totales del equipo) × 100',
+    descripcion: '¿Qué es? El porcentaje de días de trabajo perdidos por ausencias. Incluye licencias médicas, ausencias injustificadas y atrasos equivalentes a una jornada. Un ausentismo sobre 5% tiene impacto directo en productividad y costos.\n\n¿Cómo se calcula? Suma los días perdidos de todo el equipo en el mes. Divídelo por el total de días hábiles × número de personas. La meta de 3% es el estándar de la OIT para empresas saludables.\n\n¿De dónde sacar el dato? Control de asistencia o libro de novedades de RRHH.',
+  },
+  {
+    nombre: 'Rotación anual', dim: 'Personas', unidad: 'porcentaje', meta: 10, estandar: true,
+    ratio: '(Personas que salieron en 12 meses ÷ Dotación promedio) × 100',
+    descripcion: '¿Qué es? Qué porcentaje de tu equipo dejó la empresa en los últimos 12 meses. Reemplazar a una persona cuesta entre 50% y 200% de su sueldo anual en reclutamiento, capacitación y productividad perdida.\n\n¿Cómo se calcula? Cuenta las personas que salieron (renuncias + despidos) en los últimos 12 meses. Divídelo por el promedio de dotación del período.\n\n¿De dónde sacar el dato? Contratos finiquitados de los últimos 12 meses. No incluyas jubilaciones ni fin de contratos temporales planificados.',
+  },
+  {
+    nombre: 'Avance plan 90 días', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, estandar: true,
+    ratio: '(Acciones completadas ÷ Total acciones del plan) × 100',
+    descripcion: '¿Qué es? Qué porcentaje de las acciones del plan de 90 días ya fueron completadas. Es el indicador más directo de ejecución estratégica — la diferencia entre una empresa que planifica y una que ejecuta.\n\n¿Cómo se calcula? Cuenta las acciones marcadas como completadas en el módulo de Plan 90 días de EOM. Divídelo por el total de acciones del ciclo.\n\n¿De dónde sacar el dato? Módulo Plan 90 días de EOM OS. Si actualizas las acciones ahí, este KPI refleja el estado real automáticamente.',
+  },
+  {
+    nombre: 'Decisiones delegadas', dim: 'Liderazgo', unidad: 'porcentaje', meta: 70, estandar: true,
+    ratio: '(Decisiones tomadas sin el dueño ÷ Total decisiones operacionales) × 100',
+    descripcion: '¿Qué es? De todas las decisiones operacionales del mes, cuántas las tomó tu equipo sin necesitarte. Si este número es bajo, eres el cuello de botella de tu propia empresa.\n\n¿Cómo se calcula? Durante una semana, lleva un registro simple de cada decisión operacional que tomaste. Al final, estima cuáles podría haber tomado tu equipo solo. Ese porcentaje es tu línea base.\n\n¿De dónde sacar el dato? No existe un sistema automático para esto — requiere autoconsciencia del dueño. La meta de 70% significa que 7 de cada 10 decisiones del día a día las toma tu equipo.',
+  },
+  {
+    nombre: 'Reuniones con acuerdos cerrados', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, estandar: true,
+    ratio: '(Reuniones con acta ÷ Total reuniones) × 100',
+    descripcion: '¿Qué es? De todas las reuniones del mes, cuántas terminaron con acuerdos escritos que incluyen qué se decidió, quién es responsable y para cuándo. Una reunión sin acuerdo escrito es conversación, no gestión.\n\n¿Cómo se calcula? Cuenta las reuniones que tuvieron acta o registro de acuerdos. Divídelo por el total de reuniones del mes. La meta es 100% — toda reunión debe tener cierre.\n\n¿De dónde sacar el dato? Módulo de Reuniones de EOM OS o tu propio registro de actas.',
+  },
 ]
 
 const DIMS = ['Todos', 'Finanzas', 'Operaciones', 'Personas', 'Liderazgo']
@@ -250,12 +306,12 @@ export default function KPIsPage() {
         .biblioteca-item-nombre{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
         .biblioteca-item-desc{font-size:11px;color:var(--text2)}
         .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
-        .tooltip-wrap{position:relative;display:inline-flex;align-items:center}
+        .tooltip-wrap{position:relative;display:inline-flex;align-items:center;flex-shrink:0}
         .tooltip-icon{width:14px;height:14px;border-radius:50%;border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:var(--text2);cursor:help;flex-shrink:0;font-family:'DM Mono',monospace;margin-left:6px;transition:all 0.15s}
         .tooltip-icon:hover{border-color:var(--amber);color:var(--amber)}
-        .tooltip-box{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:260px;background:#1A2035;border:1px solid var(--border2);padding:12px 14px;font-size:12px;color:var(--text3);line-height:1.6;z-index:200;pointer-events:none;opacity:0;transition:opacity 0.15s;border-top:2px solid var(--amber)}
+        .tooltip-box{position:absolute;bottom:calc(100% + 8px);right:0;width:320px;background:#1A2035;border:1px solid var(--border2);padding:16px;font-size:12px;color:var(--text3);line-height:1.7;z-index:200;pointer-events:none;opacity:0;transition:opacity 0.15s;border-top:2px solid var(--amber);white-space:pre-line;text-align:left}
         .tooltip-wrap:hover .tooltip-box{opacity:1}
-        .tooltip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1A2035}
+        .tooltip-box::after{content:'';position:absolute;top:100%;right:16px;border:5px solid transparent;border-top-color:#1A2035}
         .kpi-ratio{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.4;display:flex;align-items:flex-start;gap:4px}
         @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.kpis-grid{grid-template-columns:1fr}.panel{width:100%}.semaforo-bar{grid-template-columns:1fr 1fr}}
       `}</style>
