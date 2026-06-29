@@ -253,6 +253,7 @@ export default function KPIsPage() {
   const [editando, setEditando] = useState<string|null>(null)
   const [saving, setSaving] = useState(false)
   const [empresa, setEmpresa] = useState<any>(null)
+  const [tooltip, setTooltip] = useState<{id:string,x:number,y:number}|null>(null)
 
   // Form nuevo KPI
   const [formNombre, setFormNombre] = useState('')
@@ -426,9 +427,9 @@ export default function KPIsPage() {
         .tooltip-wrap{position:relative;display:inline-flex;align-items:center;flex-shrink:0}
         .tooltip-icon{width:14px;height:14px;border-radius:50%;border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:var(--text2);cursor:help;flex-shrink:0;font-family:'DM Mono',monospace;margin-left:6px;transition:all 0.15s}
         .tooltip-icon:hover{border-color:var(--amber);color:var(--amber)}
-        .tooltip-box{position:absolute;bottom:calc(100% + 8px);right:0;width:320px;background:#1A2035;border:1px solid var(--border2);padding:16px;font-size:12px;color:var(--text3);line-height:1.7;z-index:200;pointer-events:none;opacity:0;transition:opacity 0.15s;border-top:2px solid var(--amber);white-space:pre-line;text-align:left}
+        .tooltip-box{position:fixed;width:320px;background:#1A2035;border:1px solid var(--border2);padding:16px;font-size:12px;color:var(--text3);line-height:1.7;z-index:1000;pointer-events:none;opacity:0;transition:opacity 0.15s;border-top:2px solid var(--amber);white-space:pre-line;text-align:left;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
         .tooltip-wrap:hover .tooltip-box{opacity:1}
-        .tooltip-box::after{content:'';position:absolute;top:100%;right:16px;border:5px solid transparent;border-top-color:#1A2035}
+
         .kpi-ratio{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.4;display:flex;align-items:flex-start;gap:4px}
         @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.kpis-grid{grid-template-columns:1fr}.panel{width:100%}.semaforo-bar{grid-template-columns:1fr 1fr}}
       `}</style>
@@ -500,10 +501,16 @@ export default function KPIsPage() {
                   <div className="kpi-dim" style={{color:dimColor, borderColor:dimColor+'44', background:dimColor+'11'}}>{kpi.dim}</div>
                   <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8}}>
                     <div className="kpi-nombre">{kpi.nombre}</div>
-                    <div className="tooltip-wrap">
-                      <div className="tooltip-icon">i</div>
-                      <div className="tooltip-box">{kpi.descripcion}</div>
-                    </div>
+                    <div
+                      className="tooltip-icon"
+                      onMouseEnter={e => {
+                        const rect = (e.target as HTMLElement).getBoundingClientRect()
+                        const spaceBelow = window.innerHeight - rect.bottom
+                        const y = spaceBelow > 300 ? rect.bottom + 8 : rect.top - 8
+                        setTooltip({id:kpi.id, x: Math.min(rect.left, window.innerWidth - 336), y: spaceBelow > 300 ? y : rect.top - 8})
+                      }}
+                      onMouseLeave={() => setTooltip(null)}
+                    >i</div>
                   </div>
                   {kpi.ratio && <div className="kpi-ratio">= {kpi.ratio}</div>}
 
@@ -622,6 +629,30 @@ export default function KPIsPage() {
             </button>
           </div>
         </>
+      )}
+
+      {/* Tooltip global */}
+      {tooltip && (
+        <div style={{
+          position:'fixed',
+          left: tooltip.x,
+          top: tooltip.y < window.innerHeight/2 ? tooltip.y : 'auto',
+          bottom: tooltip.y >= window.innerHeight/2 ? window.innerHeight - tooltip.y + 8 : 'auto',
+          width:'320px',
+          background:'#1A2035',
+          border:'1px solid rgba(255,255,255,0.12)',
+          borderTop:'2px solid #D97706',
+          padding:'16px',
+          fontSize:'12px',
+          color:'#8A9AB8',
+          lineHeight:1.7,
+          zIndex:1000,
+          whiteSpace:'pre-line',
+          boxShadow:'0 8px 32px rgba(0,0,0,0.5)',
+          pointerEvents:'none',
+        }}>
+          {kpis.find(k=>k.id===tooltip.id)?.descripcion}
+        </div>
       )}
 
       {/* Panel biblioteca */}
