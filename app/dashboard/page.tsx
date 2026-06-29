@@ -116,14 +116,13 @@ export default function Dashboard() {
           </div>
           <div className="nav-section">Ciclo actual</div>
           <div className="nav-item active">Dashboard</div>
-          <div className="nav-item">Diagnóstico</div>
-          <div className="nav-item">Plan 90 días</div>
-          <div className="nav-item">Acciones</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/diagnostico')}>Diagnóstico</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/plan')}>Plan 90 días</div>
           <div className="nav-section">Gestión</div>
-          <div className="nav-item">KPIs</div>
-          <div className="nav-item">Áreas</div>
-          <div className="nav-item">Reuniones</div>
-          <div className="nav-item">Mejora Continua</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/kpis')}>KPIs</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/areas')}>Áreas</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/reuniones')}>Reuniones</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/mejora')}>Mejora Continua</div>
           <div className="sidebar-bottom">
             <button className="btn-logout" onClick={async()=>{await supabase.auth.signOut();router.push('/auth')}}>Cerrar sesión</button>
           </div>
