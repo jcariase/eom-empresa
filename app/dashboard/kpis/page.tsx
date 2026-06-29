@@ -28,73 +28,190 @@ const DIM_COLORS: Record<string, string> = {
 const KPIS_ESTANDAR: Omit<KPI, 'id' | 'actual'>[] = [
   {
     nombre: 'Ingresos por ventas', dim: 'Finanzas', unidad: 'pesos', meta: 0, estandar: true,
-    ratio: 'Suma de facturas emitidas en el mes',
-    descripcion: '¿Qué es? El total de dinero que tu empresa generó por ventas en el mes, antes de cualquier descuento o costo.\n\n¿Cómo se calcula? Suma todas las facturas o boletas emitidas en el período. No incluyas anticipos recibidos ni notas de crédito pendientes.\n\n¿De dónde sacar el dato? Libro de ventas, sistema de facturación electrónica (SII), o planilla de ingresos.',
+    ratio: 'Suma de todas las ventas del mes',
+    descripcion: `¿Para qué sirve?
+Sin saber cuánto vendiste, no puedes saber si tu empresa está creciendo o encogiendo. Es el punto de partida de cualquier decisión financiera.
+
+¿Cómo lo calculas?
+Suma todas las facturas o boletas que emitiste este mes. Por ejemplo: si emitiste 10 facturas por $2.000.000 cada una, tus ingresos son $20.000.000.
+
+¿Dónde encuentras el dato?
+En tu sistema de facturación electrónica del SII, en tu libro de ventas, o en el resumen que te da tu contador. Pídelo antes del día 10 del mes siguiente.`,
   },
   {
     nombre: 'Margen bruto', dim: 'Finanzas', unidad: 'porcentaje', meta: 40, estandar: true,
-    ratio: '(Ingresos − Costo directo) ÷ Ingresos × 100',
-    descripcion: '¿Qué es? Cuánto queda de cada peso vendido después de pagar lo que cuesta producir o entregar el producto o servicio. Un margen bruto del 40% significa que de cada $100 vendidos, $40 quedan para pagar los gastos fijos y generar utilidad.\n\n¿Cómo se calcula? Costo directo incluye materiales, insumos, mano de obra directa y subcontratos. No incluyas sueldos administrativos, arriendo ni servicios básicos.\n\n¿De dónde sacar el dato? Facturas de compra de insumos + liquidaciones de sueldo del personal de producción.',
+    ratio: '(Ventas − Costo de lo vendido) ÷ Ventas × 100',
+    descripcion: `¿Para qué sirve?
+Te dice cuánto te queda de cada peso que vendes, antes de pagar los sueldos de oficina, el arriendo y otros gastos fijos. Si este número es bajo, estás vendiendo barato o tus costos de producción son muy altos.
+
+¿Cómo lo calculas?
+Ejemplo: vendiste $10.000.000. Para producir o entregar eso gastaste $6.000.000 en materiales, insumos o personal directo. Tu margen bruto es ($10M - $6M) ÷ $10M × 100 = 40%.
+
+¿Qué incluye el "costo de lo vendido"?
+Solo lo que pagaste directamente para producir o entregar: materiales, insumos, subcontratos y sueldos del personal que hace el trabajo. No incluyas el arriendo, sueldos de administración ni tu propio retiro.
+
+¿Dónde encuentras el dato?
+Facturas de compra de insumos del mes + liquidaciones del personal de producción. Tu contador puede armarte este número.`,
   },
   {
     nombre: 'Días de cobranza (DSO)', dim: 'Finanzas', unidad: 'dias', meta: 30, estandar: true,
-    ratio: '(Cuentas por cobrar ÷ Ingresos del mes) × 30',
-    descripcion: '¿Qué es? Cuántos días en promedio tardas en cobrar una factura desde que fue emitida. Un DSO de 60 días significa que le estás dando crédito gratuito a tus clientes por 2 meses.\n\n¿Cómo se calcula? Toma el saldo total de cuentas por cobrar al cierre del mes y divídelo por los ingresos del mes. Multiplica por 30.\n\n¿De dónde sacar el dato? Balance de cuentas por cobrar (tu contador lo tiene). Meta recomendada: menos de 30 días.',
+    ratio: '(Lo que te deben ÷ Ventas del mes) × 30',
+    descripcion: `¿Para qué sirve?
+Mide cuántos días pasan entre que emites una factura y tu cliente te paga. Si este número es alto, significa que tú estás pagando tus costos pero tu plata está "atrapada" en facturas sin cobrar. Eso es lo que seca la caja aunque la empresa sea rentable.
+
+¿Cómo lo calculas?
+Ejemplo: al cierre del mes tienes $15.000.000 en facturas sin cobrar. Tus ventas del mes fueron $30.000.000. DSO = ($15M ÷ $30M) × 30 = 15 días. Eso es excelente. Si el resultado fuera 60 días, significa que tus clientes te pagan 2 meses después.
+
+¿Dónde encuentras el dato?
+El saldo de cuentas por cobrar al cierre del mes te lo da tu contador o lo ves en tu libro de ventas pendientes de pago.`,
   },
   {
     nombre: 'Gastos fijos vs presupuesto', dim: 'Finanzas', unidad: 'porcentaje', meta: 100, estandar: true,
-    ratio: '(Gastos fijos reales ÷ Gastos fijos presupuestados) × 100',
-    descripcion: '¿Qué es? Compara cuánto gastaste en costos fijos versus lo que habías planificado. Un resultado sobre 100% significa que gastaste más de lo presupuestado.\n\n¿Cómo se calcula? Suma arriendo, sueldos administrativos, servicios básicos, seguros y otros fijos del mes. Divídelo por lo que tenías presupuestado para esos mismos ítems.\n\n¿De dónde sacar el dato? Planilla de gastos fijos mensual. Si no tienes presupuesto, el promedio de los últimos 3 meses es tu línea base.',
+    ratio: '(Gastos fijos reales ÷ Gastos fijos planificados) × 100',
+    descripcion: `¿Para qué sirve?
+Te alerta cuando estás gastando más de lo que planificaste en costos que no puedes evitar aunque no vendas nada. Si este número supera el 100%, tu empresa está gastando más de lo que presupuestaste.
+
+¿Cómo lo calculas?
+Primero define tus gastos fijos mensuales: arriendo, sueldos administrativos, servicios básicos, seguros. Eso es tu presupuesto. Al cierre del mes, suma lo que realmente pagaste en esos mismos ítems y divide.
+Ejemplo: presupuestaste $5.000.000 en fijos, pero gastaste $5.800.000. Resultado: 116%. Estás 16% sobre lo planificado.
+
+¿Dónde encuentras el dato?
+Comprobantes de pago del mes o el resumen que te entrega tu contador. Si no tienes presupuesto, usa el promedio de los últimos 3 meses como referencia.`,
   },
   {
     nombre: 'Entregas a tiempo', dim: 'Operaciones', unidad: 'porcentaje', meta: 95, estandar: true,
-    ratio: '(Entregas en fecha prometida ÷ Total entregas) × 100',
-    descripcion: '¿Qué es? Mide qué porcentaje de tus entregas o servicios se completaron en la fecha que le prometiste al cliente. Es el indicador más directo de confiabilidad operacional.\n\n¿Cómo se calcula? Cuenta cuántas órdenes del mes se entregaron en o antes de la fecha acordada. Divídelo por el total de órdenes del mes.\n\n¿De dónde sacar el dato? Registro de órdenes de trabajo o despacho. Si no llevas registro, empieza con una planilla simple: orden, fecha prometida, fecha real.',
+    ratio: '(Entregas en la fecha prometida ÷ Total de entregas) × 100',
+    descripcion: `¿Para qué sirve?
+Es el indicador más directo de confiabilidad. Un cliente al que le cumples siempre vuelve. Un cliente al que le fallas una vez empieza a buscar alternativas. Las empresas que mantienen este indicador sobre 95% tienen tasas de recompra significativamente más altas.
+
+¿Cómo lo calculas?
+Ejemplo: este mes hiciste 40 entregas o servicios. De esos, 37 fueron entregados en la fecha que le prometiste al cliente. Resultado: 37 ÷ 40 × 100 = 92.5%. Estás bajo la meta.
+
+¿Dónde encuentras el dato?
+Necesitas llevar un registro simple: cliente, fecha prometida, fecha real de entrega. Una planilla con esas 3 columnas es suficiente. Si no llevas registro hoy, empieza esta semana.`,
   },
   {
     nombre: 'Tiempo respuesta a clientes', dim: 'Operaciones', unidad: 'horas', meta: 4, estandar: true,
-    ratio: 'Suma de horas de espera ÷ Número de solicitudes',
-    descripcion: '¿Qué es? Cuántas horas pasan en promedio entre que un cliente hace una solicitud y tu empresa da una primera respuesta real. No una respuesta automática — una respuesta humana.\n\n¿Cómo se calcula? Registra la hora de entrada de cada solicitud y la hora de tu primera respuesta. Promedia esas diferencias al final del mes. Solo cuenta horas hábiles.\n\n¿De dónde sacar el dato? Historial de WhatsApp, email o sistema de tickets. Una semana de medición ya te da un número representativo.',
+    ratio: 'Suma de horas de espera de todos los clientes ÷ Número de solicitudes',
+    descripcion: `¿Para qué sirve?
+El tiempo que un cliente espera tu respuesta define su primera impresión de tu servicio. Estudios de experiencia de cliente muestran que responder en menos de 4 horas aumenta la probabilidad de cierre en un 50% comparado con responder al día siguiente.
+
+¿Cómo lo calculas?
+Ejemplo: esta semana recibiste 5 solicitudes. Los tiempos de espera fueron 1h, 2h, 3h, 6h y 8h. Promedio: (1+2+3+6+8) ÷ 5 = 4 horas. Justo en la meta.
+
+¿Dónde encuentras el dato?
+Revisa tu WhatsApp Business o email. Anota la hora de entrada de cada solicitud y la hora en que respondiste. Con una semana de registro ya tienes un número representativo. Solo cuenta horas hábiles, no fines de semana.`,
   },
   {
     nombre: 'Órdenes sin error', dim: 'Operaciones', unidad: 'porcentaje', meta: 98, estandar: true,
-    ratio: '(Órdenes sin reclamo ÷ Total órdenes) × 100',
-    descripcion: '¿Qué es? Qué porcentaje de tus entregas o servicios no generaron reclamo, devolución ni retrabajo. Una orden "con error" es cualquier orden que el cliente devolvió o que tuviste que rehacer.\n\n¿Cómo se calcula? Cuenta las órdenes del mes que no tuvieron ningún problema. Divídelo por el total de órdenes.\n\n¿De dónde sacar el dato? Registro de reclamos o libro de servicio técnico. Si no llevas registro, los reclamos que recuerdas del mes son un buen punto de partida.',
+    ratio: '(Órdenes sin reclamo ÷ Total de órdenes) × 100',
+    descripcion: `¿Para qué sirve?
+Cada error que cometes tiene un costo doble: el costo de corregirlo y el costo de la confianza perdida con el cliente. Una empresa que entrega bien a la primera gasta menos en retrabajos y retiene más clientes.
+
+¿Cómo lo calculas?
+Ejemplo: este mes atendiste 80 órdenes. 2 tuvieron reclamos o devoluciones. Resultado: (80-2) ÷ 80 × 100 = 97.5%. Levemente bajo la meta de 98%.
+
+¿Qué cuenta como error?
+Cualquier orden que el cliente devolvió, rechazó, o que tuviste que rehacer parcial o totalmente. No importa de quién fue la culpa.
+
+¿Dónde encuentras el dato?
+Tu registro de reclamos o libro de servicio. Si no llevas uno, los reclamos que recuerdas del mes son un punto de partida. A partir de ahora, anota cada reclamo apenas ocurra.`,
   },
   {
     nombre: 'Capacidad utilizada', dim: 'Operaciones', unidad: 'porcentaje', meta: 80, estandar: true,
-    ratio: '(Producción real ÷ Capacidad máxima) × 100',
-    descripcion: '¿Qué es? Qué porcentaje de tu capacidad operacional disponible estás realmente usando. Sobre 90% puede significar que estás saturado y arriesgando calidad. Bajo 60% puede significar recursos ociosos.\n\n¿Cómo se calcula? Define tu capacidad máxima (horas máquina, horas hombre o unidades posibles en días hábiles). Mide cuánto produjiste o entregaste realmente.\n\n¿De dónde sacar el dato? Control de producción, planillas de turnos o registro de equipos operativos. La meta de 80% es el estándar internacional para industrias de servicio y manufactura liviana.',
+    ratio: '(Lo que produjiste o entregaste ÷ Lo máximo que podrías) × 100',
+    descripcion: `¿Para qué sirve?
+Te dice si tienes recursos ociosos (capacidad desaprovechada) o si estás al límite (riesgo de errores y retrasos). El punto óptimo es entre 75% y 85%. Bajo 60% pagas por recursos que no usas. Sobre 90% el equipo se estresa y la calidad cae.
+
+¿Cómo lo calculas?
+Ejemplo: tienes 3 técnicos que pueden hacer 8 trabajos al día cada uno. En un mes de 22 días hábiles, tu capacidad máxima es 3 × 8 × 22 = 528 trabajos. Si hiciste 420, tu capacidad utilizada es 420 ÷ 528 × 100 = 79.5%. Perfecto.
+
+¿Dónde encuentras el dato?
+Define primero tu unidad de producción (trabajos, horas, pedidos, toneladas). Tu capacidad máxima la calculas tú. Lo que produjiste lo sacas de tu registro de órdenes o despachos del mes.`,
   },
   {
     nombre: 'Cumplimiento de compromisos', dim: 'Personas', unidad: 'porcentaje', meta: 90, estandar: true,
-    ratio: '(Compromisos cerrados en plazo ÷ Total compromisos) × 100',
-    descripcion: '¿Qué es? De todos los compromisos que el equipo asumió en reuniones del mes, cuántos se cerraron antes o en la fecha acordada. Es el indicador más claro de cultura de ejecución.\n\n¿Cómo se calcula? Requiere llevar registro de acuerdos con responsable y fecha. Al final del mes, cuenta cuántos se cerraron a tiempo sobre el total.\n\n¿De dónde sacar el dato? Actas de reunión o el módulo de Reuniones de EOM. Si no llevas actas, empieza esta semana — una planilla simple con 3 columnas (qué, quién, cuándo) es suficiente.',
+    ratio: '(Compromisos cerrados a tiempo ÷ Total de compromisos asumidos) × 100',
+    descripcion: `¿Para qué sirve?
+Es el termómetro más honesto de la cultura de tu equipo. Un equipo que cumple sus compromisos no necesita que el dueño esté encima de todo. Uno que no los cumple genera un ciclo donde tú tienes que supervisar cada detalle.
+
+¿Cómo lo calculas?
+Para calcularlo necesitas llevar registro de los acuerdos de tus reuniones: qué se comprometió, quién lo asumió y para cuándo. Al final del mes, cuenta cuántos se cerraron en plazo.
+Ejemplo: en el mes se generaron 20 compromisos en reuniones. 17 se cerraron antes de la fecha acordada. Resultado: 17 ÷ 20 × 100 = 85%. Bajo la meta.
+
+¿Dónde encuentras el dato?
+Módulo de Reuniones de EOM OS, o una planilla simple con 3 columnas: qué, quién, cuándo. Sin ese registro, este KPI no se puede medir.`,
   },
   {
     nombre: 'Ausentismo', dim: 'Personas', unidad: 'porcentaje', meta: 3, estandar: true,
-    ratio: '(Días perdidos ÷ Días hábiles totales del equipo) × 100',
-    descripcion: '¿Qué es? El porcentaje de días de trabajo perdidos por ausencias. Incluye licencias médicas, ausencias injustificadas y atrasos equivalentes a una jornada. Un ausentismo sobre 5% tiene impacto directo en productividad y costos.\n\n¿Cómo se calcula? Suma los días perdidos de todo el equipo en el mes. Divídelo por el total de días hábiles × número de personas. La meta de 3% es el estándar de la OIT para empresas saludables.\n\n¿De dónde sacar el dato? Control de asistencia o libro de novedades de RRHH.',
+    ratio: '(Días de trabajo perdidos ÷ Días hábiles totales del equipo) × 100',
+    descripcion: `¿Para qué sirve?
+El ausentismo tiene un costo directo e invisible: pagas el sueldo completo pero recibes menos trabajo. Además, el resto del equipo carga con ese trabajo extra, lo que genera desgaste. Un ausentismo sobre 5% es una señal de alerta de clima laboral o problemas de salud del equipo.
+
+¿Cómo lo calculas?
+Ejemplo: tienes 10 personas. En el mes hubo 22 días hábiles. Total de días disponibles: 10 × 22 = 220 días. Durante el mes se perdieron 5 días por licencias y 2 por inasistencias. Total perdido: 7 días. Ausentismo: 7 ÷ 220 × 100 = 3.2%.
+
+¿Dónde encuentras el dato?
+Control de asistencia o libro de novedades. Si no llevas control de asistencia, el libro de licencias médicas de tu contador es un punto de partida.`,
   },
   {
     nombre: 'Rotación anual', dim: 'Personas', unidad: 'porcentaje', meta: 10, estandar: true,
-    ratio: '(Personas que salieron en 12 meses ÷ Dotación promedio) × 100',
-    descripcion: '¿Qué es? Qué porcentaje de tu equipo dejó la empresa en los últimos 12 meses. Reemplazar a una persona cuesta entre 50% y 200% de su sueldo anual en reclutamiento, capacitación y productividad perdida.\n\n¿Cómo se calcula? Cuenta las personas que salieron (renuncias + despidos) en los últimos 12 meses. Divídelo por el promedio de dotación del período.\n\n¿De dónde sacar el dato? Contratos finiquitados de los últimos 12 meses. No incluyas jubilaciones ni fin de contratos temporales planificados.',
+    ratio: '(Personas que se fueron en 12 meses ÷ Promedio de personas en el equipo) × 100',
+    descripcion: `¿Para qué sirve?
+Reemplazar a una persona cuesta entre 6 y 18 meses de su sueldo si sumas reclutamiento, capacitación y el tiempo que le toma al reemplazante llegar al mismo rendimiento. Una rotación alta destruye conocimiento acumulado y desgasta al equipo que se queda.
+
+¿Cómo lo calculas?
+Ejemplo: en los últimos 12 meses salieron 4 personas (renuncias y despidos). Tu equipo promedio en ese período fue de 25 personas. Rotación: 4 ÷ 25 × 100 = 16%. Estás sobre la meta de 10%, lo que es una señal de alerta.
+
+¿Qué no cuenta?
+Fin de contratos temporales que sabías que terminaban, jubilaciones planificadas o reducción de dotación por decisión estratégica.
+
+¿Dónde encuentras el dato?
+Finiquitos de los últimos 12 meses. Tu contador o área de RRHH los tiene.`,
   },
   {
     nombre: 'Avance plan 90 días', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, estandar: true,
-    ratio: '(Acciones completadas ÷ Total acciones del plan) × 100',
-    descripcion: '¿Qué es? Qué porcentaje de las acciones del plan de 90 días ya fueron completadas. Es el indicador más directo de ejecución estratégica — la diferencia entre una empresa que planifica y una que ejecuta.\n\n¿Cómo se calcula? Cuenta las acciones marcadas como completadas en el módulo de Plan 90 días de EOM. Divídelo por el total de acciones del ciclo.\n\n¿De dónde sacar el dato? Módulo Plan 90 días de EOM OS. Si actualizas las acciones ahí, este KPI refleja el estado real automáticamente.',
+    ratio: '(Acciones completadas ÷ Total de acciones del plan) × 100',
+    descripcion: `¿Para qué sirve?
+La diferencia entre una empresa que planifica y una que ejecuta está en este número. Muchas empresas tienen buenos planes que nunca se materializan porque nadie lleva el control de avance. Este KPI te obliga a mirar la realidad de frente.
+
+¿Cómo lo calculas?
+Ve al módulo "Plan 90 días" de EOM y marca las acciones que ya completaste. EOM calcula el porcentaje automáticamente.
+
+Si no usas el módulo de Plan, cuenta cuántas acciones definiste al inicio del ciclo y cuántas ya están terminadas.
+Ejemplo: definiste 12 acciones. Llevas 7 completadas. Avance: 7 ÷ 12 × 100 = 58%.
+
+¿Cada cuánto revisarlo?
+Una vez a la semana, en tu reunión de equipo. El plan de 90 días no es un documento que se revisa al final — es una guía semanal.`,
   },
   {
     nombre: 'Decisiones delegadas', dim: 'Liderazgo', unidad: 'porcentaje', meta: 70, estandar: true,
-    ratio: '(Decisiones tomadas sin el dueño ÷ Total decisiones operacionales) × 100',
-    descripcion: '¿Qué es? De todas las decisiones operacionales del mes, cuántas las tomó tu equipo sin necesitarte. Si este número es bajo, eres el cuello de botella de tu propia empresa.\n\n¿Cómo se calcula? Durante una semana, lleva un registro simple de cada decisión operacional que tomaste. Al final, estima cuáles podría haber tomado tu equipo solo. Ese porcentaje es tu línea base.\n\n¿De dónde sacar el dato? No existe un sistema automático para esto — requiere autoconsciencia del dueño. La meta de 70% significa que 7 de cada 10 decisiones del día a día las toma tu equipo.',
+    ratio: '(Decisiones que tomó tu equipo solo ÷ Total de decisiones operacionales) × 100',
+    descripcion: `¿Para qué sirve?
+Si tú tomas todas las decisiones, eres el cuello de botella de tu empresa. Cada vez que alguien te pregunta "¿qué hago con esto?", se detiene hasta que tú respondas. Este KPI mide qué tan lejos está tu empresa de funcionar sin depender de ti en cada paso.
+
+¿Cómo lo calculas?
+Durante una semana, lleva un registro simple de cada vez que alguien te consulta una decisión operacional. Al final, estima cuántas de esas decisiones podría haber tomado tu equipo con las herramientas y claridad correctas.
+Ejemplo: te consultaron 20 veces. Estimas que 14 de esas consultas podrían haberlas resuelto solos con un proceso claro. Resultado: 14 ÷ 20 × 100 = 70%. En la meta.
+
+¿Qué es una "decisión operacional"?
+Cualquier decisión del día a día: cómo manejar un reclamo, qué proveedor usar, cómo organizar el trabajo. No incluye decisiones estratégicas como contratar personal clave o hacer inversiones grandes.`,
   },
   {
     nombre: 'Reuniones con acuerdos cerrados', dim: 'Liderazgo', unidad: 'porcentaje', meta: 100, estandar: true,
-    ratio: '(Reuniones con acta ÷ Total reuniones) × 100',
-    descripcion: '¿Qué es? De todas las reuniones del mes, cuántas terminaron con acuerdos escritos que incluyen qué se decidió, quién es responsable y para cuándo. Una reunión sin acuerdo escrito es conversación, no gestión.\n\n¿Cómo se calcula? Cuenta las reuniones que tuvieron acta o registro de acuerdos. Divídelo por el total de reuniones del mes. La meta es 100% — toda reunión debe tener cierre.\n\n¿De dónde sacar el dato? Módulo de Reuniones de EOM OS o tu propio registro de actas.',
+    ratio: '(Reuniones con acta de acuerdos ÷ Total de reuniones) × 100',
+    descripcion: `¿Para qué sirve?
+Una reunión sin acuerdos escritos es solo una conversación. Estudios de gestión muestran que el 70% de lo que se decide verbalmente en una reunión no se ejecuta. El acta no es burocracia — es la herramienta que convierte la conversación en acción.
+
+¿Cómo lo calculas?
+Cuenta cuántas reuniones del mes terminaron con un acta o registro que incluye: qué se decidió, quién es el responsable y para cuándo. Divídelo por el total de reuniones.
+Ejemplo: tuviste 8 reuniones este mes. 6 terminaron con acta. Resultado: 6 ÷ 8 × 100 = 75%. Bajo la meta.
+
+¿Qué debe tener un acta mínima?
+Solo 3 columnas: QUÉ se acordó, QUIÉN es responsable, CUÁNDO debe estar listo. No necesita ser un documento formal — un WhatsApp con esa información cuenta.
+
+¿Dónde encuentras el dato?
+Módulo de Reuniones de EOM OS o tu propio registro de actas.`,
   },
 ]
 
