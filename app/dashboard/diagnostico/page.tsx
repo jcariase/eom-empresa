@@ -179,9 +179,30 @@ export default function DiagnosticoPage() {
           <div className="page-title">Diagnóstico EOM</div>
           <div className="page-sub">{empresa?.nombre} · Ciclo 1</div>
 
-          <div className="ciclo-badge">
-            <span className="ciclo-badge-text">Ciclo 1 · {diagnostico?.created_at ? new Date(diagnostico.created_at).toLocaleDateString('es-CL', {day:'numeric',month:'long',year:'numeric'}) : '—'}</span>
-          </div>
+          {(() => {
+            const inicio = empresa?.ciclo_inicio ? new Date(empresa.ciclo_inicio) : new Date()
+            const fin = new Date(inicio); fin.setDate(fin.getDate() + 90)
+            const hoy = new Date()
+            const transcurridos = Math.min(90, Math.max(0, Math.floor((hoy.getTime()-inicio.getTime())/(1000*60*60*24))))
+            const restantes = Math.max(0, 90-transcurridos)
+            const pctCiclo = Math.round((transcurridos/90)*100)
+            const fmtDate = (d: Date) => d.toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'})
+            return (
+              <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderLeft:'2px solid var(--amber)',padding:'20px 24px',marginBottom:'24px'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:12}}>
+                  <div style={{fontFamily:"'DM Mono',monospace",fontSize:'10px',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--amber)'}}>Ciclo 1 · En curso</div>
+                  <div style={{display:'flex',gap:24}}>
+                    <div style={{fontSize:'12px',color:'var(--text2)'}}>📅 Inicio: <span style={{color:'var(--text3)'}}>{fmtDate(inicio)}</span></div>
+                    <div style={{fontSize:'12px',color:'var(--text2)'}}>🏁 Cierre: <span style={{color:'var(--text3)'}}>{fmtDate(fin)}</span></div>
+                    <div style={{fontSize:'12px',color:'var(--text2)'}}><span style={{color:'var(--amber)',fontWeight:500}}>{restantes} días restantes</span></div>
+                  </div>
+                </div>
+                <div style={{height:'3px',background:'var(--border)'}}>
+                  <div style={{height:'100%',background:'var(--amber)',width:`${pctCiclo}%`}} />
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Score global */}
           <div className="score-hero">

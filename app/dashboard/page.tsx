@@ -133,17 +133,44 @@ export default function Dashboard() {
           <div className="page-sub">Ciclo 1 · {empresa.nombre}</div>
 
           {/* Contador ciclo */}
-          <div className="ciclo-card">
-            <div className="ciclo-info">
-              <div className="ciclo-label">Ciclo EOM · En curso</div>
-              <div className="ciclo-title">Primer ciclo de 90 días</div>
-              <div className="ciclo-sub">Al terminar, EOM activa el re-diagnóstico y el estándar de hoy se convierte en tu piso.</div>
-            </div>
-            <div className="ciclo-counter">
-              <div className="ciclo-days">{diasRestantes}</div>
-              <div className="ciclo-days-label">días restantes</div>
-            </div>
-          </div>
+          {(() => {
+            const inicio = empresa?.ciclo_inicio ? new Date(empresa.ciclo_inicio) : new Date()
+            const fin = new Date(inicio); fin.setDate(fin.getDate() + 90)
+            const hoy = new Date()
+            const transcurridos = Math.min(90, Math.max(0, Math.floor((hoy.getTime()-inicio.getTime())/(1000*60*60*24))))
+            const restantes = Math.max(0, 90-transcurridos)
+            const pctCiclo = Math.round((transcurridos/90)*100)
+            const fmtDate = (d: Date) => d.toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'})
+            return (
+              <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderLeft:'2px solid var(--amber)',padding:'24px 28px',marginBottom:'24px'}}>
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:16}}>
+                  <div>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:'10px',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--amber)',marginBottom:8}}>Ciclo EOM 1 · En curso</div>
+                    <div style={{fontSize:'15px',fontWeight:500,color:'var(--text)',marginBottom:4}}>Ciclo de 90 días</div>
+                    <div style={{fontSize:'13px',color:'var(--text3)'}}>Al terminar, EOM activa el re-diagnóstico. El estándar de hoy se convierte en tu piso.</div>
+                  </div>
+                  <div style={{display:'flex',gap:32,flexShrink:0}}>
+                    <div style={{textAlign:'center'}}>
+                      <div style={{fontFamily:"'Playfair Display',serif",fontSize:'40px',color:'var(--amber)',lineHeight:1}}>{restantes}</div>
+                      <div style={{fontSize:'11px',color:'var(--text2)',marginTop:4}}>días restantes</div>
+                    </div>
+                    <div style={{textAlign:'center'}}>
+                      <div style={{fontFamily:"'Playfair Display',serif",fontSize:'40px',color:'var(--text3)',lineHeight:1}}>{transcurridos}</div>
+                      <div style={{fontSize:'11px',color:'var(--text2)',marginTop:4}}>días transcurridos</div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{height:'4px',background:'var(--border)',marginBottom:10}}>
+                  <div style={{height:'100%',background:'var(--amber)',width:`${pctCiclo}%`,transition:'width 0.5s ease'}} />
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
+                  <div style={{fontSize:'12px',color:'var(--text2)'}}>📅 Inicio: <span style={{color:'var(--text3)'}}>{fmtDate(inicio)}</span></div>
+                  <div style={{fontSize:'12px',color:'var(--text2)'}}>{pctCiclo}% completado</div>
+                  <div style={{fontSize:'12px',color:'var(--text2)'}}>🏁 Cierre: <span style={{color:'var(--text3)'}}>{fmtDate(fin)}</span></div>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* KPIs financieros */}
           <div className="section-title">Resultado operacional — baseline del ciclo</div>
