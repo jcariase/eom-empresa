@@ -24,7 +24,7 @@ export default function Dashboard() {
     async function load() {
       const {data:{user}} = await supabase.auth.getUser()
       if (!user) { router.push('/auth'); return }
-      const {data:emp} = await supabase.from('empresas').select('*').eq('user_id',user.id).single()
+      const {data:emp} = await supabase.from('empresas_empresa').select('*').eq('user_id',user.id).single()
       if (!emp || !emp.onboarding_completo) { router.push('/onboarding'); return }
       const {data:diag} = await supabase.from('diagnosticos_empresa').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).single()
       setEmpresa(emp)

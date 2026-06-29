@@ -120,7 +120,7 @@ export default function Onboarding() {
   async function guardarEmpresa() {
     if (!userId) return
     setGuardando(true)
-    const {error: empError} = await supabase.from('empresas').upsert({
+    const {error: empError} = await supabase.from('empresas_empresa').upsert({
       user_id: userId,
       nombre,
       rubro,
@@ -164,7 +164,7 @@ export default function Onboarding() {
   async function finalizarOnboarding() {
     if (!userId) return
     setGuardando(true)
-    await supabase.from('empresas').upsert({user_id: userId, onboarding_completo: true}, {onConflict: 'user_id'})
+    await supabase.from('empresas_empresa').upsert({user_id: userId, onboarding_completo: true}, {onConflict: 'user_id'})
     setGuardando(false)
     router.push('/dashboard')
   }
