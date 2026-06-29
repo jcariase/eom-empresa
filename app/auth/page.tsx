@@ -1,11 +1,11 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function Auth() {
+function AuthForm() {
   const router = useRouter()
   const params = useSearchParams()
   const [mode, setMode] = useState<'login'|'register'>(params.get('mode')==='register'?'register':'login')
@@ -21,7 +21,7 @@ export default function Auth() {
     if (mode === 'register') {
       const {error} = await supabase.auth.signUp({email, password})
       if (error) setError(error.message)
-      else { setSuccess('Cuenta creada. Revisa tu email para confirmar.'); setTimeout(()=>router.push('/onboarding'),2000) }
+      else { setSuccess('Cuenta creada. Redirigiendo...'); setTimeout(()=>router.push('/onboarding'),1500) }
     } else {
       const {error} = await supabase.auth.signInWithPassword({email, password})
       if (error) setError('Email o contraseña incorrectos')
@@ -30,6 +30,25 @@ export default function Auth() {
     setLoading(false)
   }
 
+  return (
+    <div className="card">
+      <div className="wordmark"><div className="mark">E</div>EOM OS Empresa</div>
+      <div className="title">{mode==='register'?'Crear cuenta':'Ingresar'}</div>
+      {error && <div className="error">{error}</div>}
+      {success && <div className="success">{success}</div>}
+      <form onSubmit={handleSubmit}>
+        <input className="field" type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} required />
+        <input className="field" type="password" placeholder="Contraseña" value={password} onChange={e=>setPassword(e.target.value)} required />
+        <button className="btn" type="submit" disabled={loading}>{loading?'...':(mode==='register'?'Crear cuenta →':'Ingresar →')}</button>
+      </form>
+      <div className="switch">
+        {mode==='register'?<>¿Ya tienes cuenta? <a onClick={()=>setMode('login')}>Ingresar</a></>:<>¿No tienes cuenta? <a onClick={()=>setMode('register')}>Registrarse</a></>}
+      </div>
+    </div>
+  )
+}
+
+export default function Auth() {
   return (
     <>
       <style>{`
@@ -49,23 +68,12 @@ export default function Auth() {
         .error{font-size:13px;color:#EF4444;margin-bottom:12px}
         .success{font-size:13px;color:#4ADE80;margin-bottom:12px}
         .switch{font-size:13px;color:#5A6888;margin-top:20px;text-align:center}
-        .switch a{color:#D97706;cursor:pointer;text-decoration:none}
+        .switch a{color:#D97706;cursor:pointer}
         .switch a:hover{color:#FCD34D}
       `}</style>
-      <div className="card">
-        <div className="wordmark"><div className="mark">E</div>EOM OS Empresa</div>
-        <div className="title">{mode==='register'?'Crear cuenta':'Ingresar'}</div>
-        {error && <div className="error">{error}</div>}
-        {success && <div className="success">{success}</div>}
-        <form onSubmit={handleSubmit}>
-          <input className="field" type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} required />
-          <input className="field" type="password" placeholder="Contraseña" value={password} onChange={e=>setPassword(e.target.value)} required />
-          <button className="btn" type="submit" disabled={loading}>{loading?'...':(mode==='register'?'Crear cuenta →':'Ingresar →')}</button>
-        </form>
-        <div className="switch">
-          {mode==='register'?<>¿Ya tienes cuenta? <a onClick={()=>setMode('login')}>Ingresar</a></>:<>¿No tienes cuenta? <a onClick={()=>setMode('register')}>Registrarse</a></>}
-        </div>
-      </div>
+      <Suspense fallback={<div style={{color:'#5A6888',fontFamily:'DM Sans,sans-serif',fontSize:'13px'}}>Cargando...</div>}>
+        <AuthForm />
+      </Suspense>
     </>
   )
 }
