@@ -9,7 +9,7 @@ type KPI = {
   id: string
   nombre: string
   dim: string
-  unidad: 'porcentaje' | 'pesos' | 'dias' | 'numero'
+  unidad: 'porcentaje' | 'pesos' | 'dias' | 'numero' | 'horas'
   meta: number
   actual: number
   descripcion: string
