@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Sidebar from '../../components/Sidebar'
 
 function fmt(n: number) { return n.toLocaleString('es-CL') }
 function parseMiles(val: string) { return parseInt(val.replace(/\./g,'')) || 0 }
@@ -114,64 +115,49 @@ export default function ConfiguracionPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        :root{--bg:#07090E;--bg2:#0C0F18;--bg3:#111520;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--text:#E8EDF8;--text2:#5A6888;--text3:#8A9AB8;--amber:#D97706;--amber-light:#FCD34D;--amber-dim:rgba(217,119,6,0.12);--amber-border:rgba(217,119,6,0.25);--green:#16A34A;--green-light:#4ADE80;--red:#EF4444}
-        body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+        body{background:var(--bg);color:var(--txt-1);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
         .layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-        .sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
-        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--text);padding:0 20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
+        .sidebar{background:var(--surf-2);border-right:1px solid var(--brd);padding:24px 0;display:flex;flex-direction:column}
+        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--txt-1);padding:0 20px 24px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
         .mark{width:24px;height:24px;border-radius:5px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:'DM Mono',monospace;flex-shrink:0}
-        .nav-item{padding:10px 20px;font-size:13px;color:var(--text3);cursor:pointer;transition:all 0.15s}
-        .nav-item:hover{color:var(--text);background:var(--bg3)}
+        .nav-item{padding:10px 20px;font-size:13px;color:var(--txt-3);cursor:pointer;transition:all 0.15s}
+        .nav-item:hover{color:var(--txt-1);background:var(--surf-3)}
         .nav-item.active{color:var(--amber);background:rgba(217,119,6,0.08)}
-        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2)}
-        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
-        .btn-logout{background:none;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
+        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--txt-2)}
+        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--brd)}
+        .btn-logout{background:none;border:none;color:var(--txt-2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
         .main{padding:40px;max-width:720px;overflow-y:auto}
-        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--text);margin-bottom:4px}
-        .page-sub{font-size:14px;color:var(--text3);margin-bottom:32px}
+        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--txt-1);margin-bottom:4px}
+        .page-sub{font-size:14px;color:var(--txt-3);margin-bottom:32px}
         .saved-toast{background:var(--green-light);color:#0a2e15;font-size:13px;font-weight:500;padding:10px 16px;margin-bottom:20px;display:inline-block}
-        .section{background:var(--bg2);border:1px solid var(--border);padding:28px;margin-bottom:24px}
-        .section-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:6px}
-        .section-sub{font-size:13px;color:var(--text3);margin-bottom:20px;line-height:1.6}
+        .section{background:var(--surf-2);border:1px solid var(--brd);padding:28px;margin-bottom:24px}
+        .section-title{font-size:15px;font-weight:500;color:var(--txt-1);margin-bottom:6px}
+        .section-sub{font-size:13px;color:var(--txt-3);margin-bottom:20px;line-height:1.6}
         .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
         .field-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
-        .field-label{font-size:12px;color:var(--text3);font-weight:500}
-        .field{padding:11px 14px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%;border-radius:0}
+        .field-label{font-size:12px;color:var(--txt-3);font-weight:500}
+        .field{padding:11px 14px;border:1px solid var(--brd-2);background:var(--surf-3);color:var(--txt-1);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%;border-radius:0}
         .field:focus{border-color:var(--amber)}
-        .field::placeholder{color:var(--text2)}
+        .field::placeholder{color:var(--txt-2)}
         .btn-save{padding:11px 24px;border:none;background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-radius:0}
         .btn-save:hover{background:#B45309}
         .btn-save:disabled{opacity:0.5;cursor:not-allowed}
-        .resultado-preview{background:var(--bg3);border:1px solid var(--border);padding:20px;margin:16px 0;font-family:'DM Mono',monospace;font-size:13px}
-        .resultado-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)}
-        .resultado-row:last-child{border-bottom:none;padding-top:10px;margin-top:4px;border-top:1px solid var(--border2)}
+        .resultado-preview{background:var(--surf-3);border:1px solid var(--brd);padding:20px;margin:16px 0;font-family:'DM Mono',monospace;font-size:13px}
+        .resultado-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd)}
+        .resultado-row:last-child{border-bottom:none;padding-top:10px;margin-top:4px;border-top:1px solid var(--brd-2)}
         .areas-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
         .area-tag{padding:7px 14px;border:1px solid var(--amber-border);background:var(--amber-dim);color:var(--amber-light);font-size:13px;display:flex;align-items:center;gap:8px}
         .area-tag-x{cursor:pointer;color:var(--amber);font-size:16px;line-height:1}
         .area-tag-x:hover{color:#fff}
         .area-add-row{display:flex;gap:10px}
-        .btn-add{padding:11px 20px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;white-space:nowrap}
+        .btn-add{padding:11px 20px;border:1px solid var(--brd-2);background:transparent;color:var(--txt-3);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;white-space:nowrap}
         .btn-add:hover{border-color:var(--amber-border);color:var(--amber)}
-        .warning-box{background:rgba(217,119,6,0.08);border:1px solid var(--amber-border);padding:14px 16px;font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:16px}
-        @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.field-row{grid-template-columns:1fr}}
+        .warning-box{background:rgba(217,119,6,0.08);border:1px solid var(--amber-border);padding:14px 16px;font-size:12px;color:var(--txt-3);line-height:1.6;margin-bottom:16px}
+        @media(max-width:768px){.layout{grid-template-columns:1fr}.main{padding:20px 16px}.field-row{grid-template-columns:1fr}}
       `}</style>
 
       <div className="layout">
-        <aside className="sidebar">
-          <div className="sidebar-logo" onClick={() => router.push('/dashboard')}><div className="mark">E</div>EOM OS</div>
-          <div className="nav-section">Ciclo actual</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard')}>Dashboard</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/diagnostico')}>Diagnóstico</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/plan')}>Plan 90 días</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/kpis')}>KPIs</div>
-          <div className="nav-section">Gestión</div>
-          <div className="nav-item active">Configuración</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/reuniones')}>Reuniones</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/mejora')}>Mejora Continua</div>
-          <div className="sidebar-bottom">
-            <button className="btn-logout" onClick={async () => { await supabase.auth.signOut(); router.push('/auth') }}>Cerrar sesión</button>
-          </div>
-        </aside>
+        <Sidebar empresaNombre={nombre} />
 
         <main className="main">
           <div className="page-title">Configuración</div>
@@ -235,9 +221,9 @@ export default function ConfiguracionPage() {
 
             {ing > 0 && (
               <div className="resultado-preview">
-                <div className="resultado-row"><span>Margen bruto</span><span style={{color: margenBruto >= 0 ? 'var(--text)' : 'var(--red)'}}>$ {fmt(margenBruto)}</span></div>
-                <div className="resultado-row"><span>Resultado operacional</span><span style={{color: resultadoOp >= 0 ? 'var(--text)' : 'var(--red)'}}>$ {fmt(resultadoOp)}</span></div>
-                <div className="resultado-row"><span style={{fontWeight: 500, color: 'var(--text)'}}>Resultado real</span><span style={{fontWeight: 500, color: resultadoReal >= 0 ? 'var(--green-light)' : 'var(--red)'}}>$ {fmt(resultadoReal)}</span></div>
+                <div className="resultado-row"><span>Margen bruto</span><span style={{color: margenBruto >= 0 ? 'var(--txt-1)' : 'var(--red)'}}>$ {fmt(margenBruto)}</span></div>
+                <div className="resultado-row"><span>Resultado operacional</span><span style={{color: resultadoOp >= 0 ? 'var(--txt-1)' : 'var(--red)'}}>$ {fmt(resultadoOp)}</span></div>
+                <div className="resultado-row"><span style={{fontWeight: 500, color: 'var(--txt-1)'}}>Resultado real</span><span style={{fontWeight: 500, color: resultadoReal >= 0 ? 'var(--green-light)' : 'var(--red)'}}>$ {fmt(resultadoReal)}</span></div>
               </div>
             )}
 

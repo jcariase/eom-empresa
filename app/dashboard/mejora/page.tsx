@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Sidebar from '../../components/Sidebar'
 
 type Problema = {
   id: string
@@ -200,90 +201,75 @@ export default function MejoraContinuaPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        :root{--bg:#07090E;--bg2:#0C0F18;--bg3:#111520;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--text:#E8EDF8;--text2:#5A6888;--text3:#8A9AB8;--amber:#D97706;--amber-light:#FCD34D;--amber-dim:rgba(217,119,6,0.12);--amber-border:rgba(217,119,6,0.25);--green:#16A34A;--green-light:#4ADE80;--red:#EF4444;--red-dim:rgba(239,68,68,0.1)}
-        body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+        body{background:var(--bg);color:var(--txt-1);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
         .layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-        .sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
-        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--text);padding:0 20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
+        .sidebar{background:var(--surf-2);border-right:1px solid var(--brd);padding:24px 0;display:flex;flex-direction:column}
+        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--txt-1);padding:0 20px 24px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
         .mark{width:24px;height:24px;border-radius:5px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:'DM Mono',monospace;flex-shrink:0}
-        .nav-item{padding:10px 20px;font-size:13px;color:var(--text3);cursor:pointer;transition:all 0.15s}
-        .nav-item:hover{color:var(--text);background:var(--bg3)}
+        .nav-item{padding:10px 20px;font-size:13px;color:var(--txt-3);cursor:pointer;transition:all 0.15s}
+        .nav-item:hover{color:var(--txt-1);background:var(--surf-3)}
         .nav-item.active{color:var(--amber);background:rgba(217,119,6,0.08)}
-        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2)}
-        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
-        .btn-logout{background:none;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
+        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--txt-2)}
+        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--brd)}
+        .btn-logout{background:none;border:none;color:var(--txt-2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
         .main{padding:40px;overflow-y:auto}
         .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:16px}
-        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--text);margin-bottom:4px}
-        .page-sub{font-size:14px;color:var(--text3)}
+        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--txt-1);margin-bottom:4px}
+        .page-sub{font-size:14px;color:var(--txt-3)}
         .btn-amber{padding:10px 20px;border:none;background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-radius:0}
         .btn-amber:hover{background:#B45309}
-        .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:24px}
-        .metric{padding:20px;background:var(--bg2)}
-        .metric-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:8px}
-        .metric-val{font-family:'Playfair Display',serif;font-size:32px;color:var(--text);font-weight:400}
-        .metric-sub{font-size:12px;color:var(--text2);margin-top:4px}
+        .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--brd);border:1px solid var(--brd);margin-bottom:24px}
+        .metric{padding:20px;background:var(--surf-2)}
+        .metric-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--txt-2);margin-bottom:8px}
+        .metric-val{font-family:'Playfair Display',serif;font-size:32px;color:var(--txt-1);font-weight:400}
+        .metric-sub{font-size:12px;color:var(--txt-2);margin-top:4px}
         .filtros{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
-        .filtro-select{padding:8px 14px;border:1px solid var(--border2);background:var(--bg2);color:var(--text3);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer}
-        .problema-card{background:var(--bg2);border:1px solid var(--border);margin-bottom:12px;padding:20px 22px;position:relative}
+        .filtro-select{padding:8px 14px;border:1px solid var(--brd-2);background:var(--surf-2);color:var(--txt-3);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer}
+        .problema-card{background:var(--surf-2);border:1px solid var(--brd);margin-bottom:12px;padding:20px 22px;position:relative}
         .problema-card.recurrente{border-left:2px solid var(--red)}
         .problema-card.resuelto{opacity:0.6}
         .problema-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
         .problema-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
         .problema-area-badge{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--amber);background:var(--amber-dim);border:1px solid var(--amber-border);padding:4px 10px}
         .recurrente-badge{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--red);background:var(--red-dim);border:1px solid rgba(239,68,68,0.3);padding:4px 10px}
-        .problema-fecha{font-size:12px;color:var(--text2)}
-        .problema-que{font-size:15px;font-weight:500;color:var(--text);margin-bottom:14px;line-height:1.5}
+        .problema-fecha{font-size:12px;color:var(--txt-2)}
+        .problema-que{font-size:15px;font-weight:500;color:var(--txt-1);margin-bottom:14px;line-height:1.5}
         .problema-3q{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-        .q-block{background:var(--bg3);padding:12px 14px;border-left:2px solid var(--border2)}
+        .q-block{background:var(--surf-3);padding:12px 14px;border-left:2px solid var(--brd-2)}
         .q-block.evitar{border-left-color:var(--green)}
-        .q-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
-        .q-text{font-size:13px;color:var(--text3);line-height:1.5}
-        .q-text.empty{color:var(--text2);font-style:italic}
-        .problema-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border)}
-        .problema-asignacion{display:flex;gap:14px;font-size:12px;color:var(--text2)}
-        .btn-resuelto{padding:6px 14px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer}
+        .q-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--txt-2);margin-bottom:6px}
+        .q-text{font-size:13px;color:var(--txt-3);line-height:1.5}
+        .q-text.empty{color:var(--txt-2);font-style:italic}
+        .problema-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--brd)}
+        .problema-asignacion{display:flex;gap:14px;font-size:12px;color:var(--txt-2)}
+        .btn-resuelto{padding:6px 14px;border:1px solid var(--brd-2);background:transparent;color:var(--txt-3);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer}
         .btn-resuelto.activo{background:rgba(22,163,74,0.15);border-color:var(--green);color:var(--green-light)}
-        .btn-eliminar{background:none;border:none;color:var(--text2);font-size:14px;cursor:pointer;padding:4px 8px}
+        .btn-eliminar{background:none;border:none;color:var(--txt-2);font-size:14px;cursor:pointer;padding:4px 8px}
         .btn-eliminar:hover{color:var(--red)}
-        .empty-state{padding:60px 24px;text-align:center;border:1px solid var(--border);background:var(--bg2)}
-        .empty-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:8px;font-weight:400}
-        .empty-sub{font-size:13px;color:var(--text3);margin-bottom:24px;line-height:1.6}
-        .panel{position:fixed;top:0;right:0;bottom:0;width:480px;background:var(--bg2);border-left:1px solid var(--border);padding:32px;overflow-y:auto;z-index:100;animation:slideIn 0.2s ease}
+        .empty-state{padding:60px 24px;text-align:center;border:1px solid var(--brd);background:var(--surf-2)}
+        .empty-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--txt-1);margin-bottom:8px;font-weight:400}
+        .empty-sub{font-size:13px;color:var(--txt-3);margin-bottom:24px;line-height:1.6}
+        .panel{position:fixed;top:0;right:0;bottom:0;width:480px;background:var(--surf-2);border-left:1px solid var(--brd);padding:32px;overflow-y:auto;z-index:100;animation:slideIn 0.2s ease}
         @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
-        .panel-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:20px;font-weight:400}
-        .panel-close{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer}
+        .panel-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--txt-1);margin-bottom:20px;font-weight:400}
+        .panel-close{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--txt-2);font-size:20px;cursor:pointer}
         .field-group{margin-bottom:16px}
-        .field-label{font-size:12px;color:var(--text3);margin-bottom:5px;display:block;font-weight:500}
-        .field-help{font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4}
-        .field{width:100%;padding:9px 12px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;border-radius:0}
+        .field-label{font-size:12px;color:var(--txt-3);margin-bottom:5px;display:block;font-weight:500}
+        .field-help{font-size:11px;color:var(--txt-2);margin-bottom:6px;line-height:1.4}
+        .field{width:100%;padding:9px 12px;border:1px solid var(--brd-2);background:var(--surf-3);color:var(--txt-1);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;border-radius:0}
         .field:focus{border-color:var(--amber)}
-        .field::placeholder{color:var(--text2)}
+        .field::placeholder{color:var(--txt-2)}
         textarea.field{min-height:64px;resize:vertical}
         .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         select.field{cursor:pointer}
-        .alerta-recurrencia{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);padding:14px 16px;margin-bottom:16px;font-size:12px;color:var(--text3);line-height:1.6}
+        .alerta-recurrencia{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);padding:14px 16px;margin-bottom:16px;font-size:12px;color:var(--txt-3);line-height:1.6}
         .alerta-recurrencia-titulo{color:var(--red);font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:6px}
         .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
-        @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.panel{width:100%}.metrics{grid-template-columns:1fr}.problema-3q{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}}
+        @media(max-width:768px){.layout{grid-template-columns:1fr}.main{padding:20px 16px}.panel{width:100%}.metrics{grid-template-columns:1fr}.problema-3q{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}}
       `}</style>
 
       <div className="layout">
-        <aside className="sidebar">
-          <div className="sidebar-logo" onClick={() => router.push('/dashboard')}><div className="mark">E</div>EOM OS</div>
-          <div className="nav-section">Ciclo actual</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard')}>Dashboard</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/diagnostico')}>Diagnóstico</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/plan')}>Plan 90 días</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/kpis')}>KPIs</div>
-          <div className="nav-section">Gestión</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/configuracion')}>Configuración</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/reuniones')}>Reuniones</div>
-          <div className="nav-item active">Mejora Continua</div>
-          <div className="sidebar-bottom">
-            <button className="btn-logout" onClick={async () => { await supabase.auth.signOut(); router.push('/auth') }}>Cerrar sesión</button>
-          </div>
-        </aside>
+        <Sidebar empresaNombre={empresa?.nombre} />
 
         <main className="main">
           <div className="page-header">

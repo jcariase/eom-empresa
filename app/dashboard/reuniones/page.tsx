@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Sidebar from '../../components/Sidebar'
 
 type Acuerdo = {
   id: string
@@ -143,90 +144,75 @@ export default function ReunionesPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        :root{--bg:#07090E;--bg2:#0C0F18;--bg3:#111520;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--text:#E8EDF8;--text2:#5A6888;--text3:#8A9AB8;--amber:#D97706;--amber-light:#FCD34D;--amber-dim:rgba(217,119,6,0.12);--amber-border:rgba(217,119,6,0.25);--green:#16A34A;--green-light:#4ADE80;--red:#EF4444}
-        body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+        body{background:var(--bg);color:var(--txt-1);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
         .layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-        .sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
-        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--text);padding:0 20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
+        .sidebar{background:var(--surf-2);border-right:1px solid var(--brd);padding:24px 0;display:flex;flex-direction:column}
+        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--txt-1);padding:0 20px 24px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
         .mark{width:24px;height:24px;border-radius:5px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:'DM Mono',monospace;flex-shrink:0}
-        .nav-item{padding:10px 20px;font-size:13px;color:var(--text3);cursor:pointer;transition:all 0.15s}
-        .nav-item:hover{color:var(--text);background:var(--bg3)}
+        .nav-item{padding:10px 20px;font-size:13px;color:var(--txt-3);cursor:pointer;transition:all 0.15s}
+        .nav-item:hover{color:var(--txt-1);background:var(--surf-3)}
         .nav-item.active{color:var(--amber);background:rgba(217,119,6,0.08)}
-        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2)}
-        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
-        .btn-logout{background:none;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
+        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--txt-2)}
+        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--brd)}
+        .btn-logout{background:none;border:none;color:var(--txt-2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
         .main{padding:40px;overflow-y:auto}
         .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:16px}
-        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--text);margin-bottom:4px}
-        .page-sub{font-size:14px;color:var(--text3)}
+        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--txt-1);margin-bottom:4px}
+        .page-sub{font-size:14px;color:var(--txt-3)}
         .btn-amber{padding:10px 20px;border:none;background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-radius:0}
         .btn-amber:hover{background:#B45309}
-        .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:28px}
-        .metric{padding:20px;background:var(--bg2)}
-        .metric-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);margin-bottom:8px}
-        .metric-val{font-family:'Playfair Display',serif;font-size:32px;color:var(--text);font-weight:400}
-        .metric-sub{font-size:12px;color:var(--text2);margin-top:4px}
-        .reunion-card{background:var(--bg2);border:1px solid var(--border);margin-bottom:12px;overflow:hidden}
+        .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--brd);border:1px solid var(--brd);margin-bottom:28px}
+        .metric{padding:20px;background:var(--surf-2)}
+        .metric-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--txt-2);margin-bottom:8px}
+        .metric-val{font-family:'Playfair Display',serif;font-size:32px;color:var(--txt-1);font-weight:400}
+        .metric-sub{font-size:12px;color:var(--txt-2);margin-top:4px}
+        .reunion-card{background:var(--surf-2);border:1px solid var(--brd);margin-bottom:12px;overflow:hidden}
         .reunion-header{padding:18px 22px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:16px}
-        .reunion-header:hover{background:var(--bg3)}
+        .reunion-header:hover{background:var(--surf-3)}
         .reunion-info{display:flex;align-items:center;gap:14px;min-width:0}
         .reunion-area-badge{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--amber);background:var(--amber-dim);border:1px solid var(--amber-border);padding:4px 10px;flex-shrink:0}
-        .reunion-titulo{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .reunion-fecha{font-size:12px;color:var(--text2);flex-shrink:0}
-        .reunion-acuerdos-count{font-size:12px;color:var(--text2);flex-shrink:0}
-        .reunion-body{padding:0 22px 18px;border-top:1px solid var(--border)}
-        .acuerdo-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+        .reunion-titulo{font-size:14px;font-weight:500;color:var(--txt-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .reunion-fecha{font-size:12px;color:var(--txt-2);flex-shrink:0}
+        .reunion-acuerdos-count{font-size:12px;color:var(--txt-2);flex-shrink:0}
+        .reunion-body{padding:0 22px 18px;border-top:1px solid var(--brd)}
+        .acuerdo-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--brd)}
         .acuerdo-row:last-child{border-bottom:none}
-        .acuerdo-check{width:16px;height:16px;border:1.5px solid var(--border2);background:transparent;cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center}
+        .acuerdo-check{width:16px;height:16px;border:1.5px solid var(--brd-2);background:transparent;cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center}
         .acuerdo-check.done{background:var(--green);border-color:var(--green)}
         .acuerdo-check.done::after{content:'✓';color:#fff;font-size:9px;font-weight:700}
         .acuerdo-content{flex:1;min-width:0}
-        .acuerdo-que{font-size:13px;color:var(--text);margin-bottom:4px}
-        .acuerdo-que.done{color:var(--text2);text-decoration:line-through}
+        .acuerdo-que{font-size:13px;color:var(--txt-1);margin-bottom:4px}
+        .acuerdo-que.done{color:var(--txt-2);text-decoration:line-through}
         .acuerdo-meta{display:flex;gap:14px}
-        .acuerdo-meta-item{font-size:11px;color:var(--text2)}
-        .btn-eliminar-reunion{background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;padding:4px 8px;flex-shrink:0}
+        .acuerdo-meta-item{font-size:11px;color:var(--txt-2)}
+        .btn-eliminar-reunion{background:none;border:none;color:var(--txt-2);font-size:13px;cursor:pointer;padding:4px 8px;flex-shrink:0}
         .btn-eliminar-reunion:hover{color:var(--red)}
-        .empty-state{padding:60px 24px;text-align:center;border:1px solid var(--border);background:var(--bg2)}
-        .empty-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:8px;font-weight:400}
-        .empty-sub{font-size:13px;color:var(--text3);margin-bottom:24px;line-height:1.6}
-        .panel{position:fixed;top:0;right:0;bottom:0;width:480px;background:var(--bg2);border-left:1px solid var(--border);padding:32px;overflow-y:auto;z-index:100;animation:slideIn 0.2s ease}
+        .empty-state{padding:60px 24px;text-align:center;border:1px solid var(--brd);background:var(--surf-2)}
+        .empty-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--txt-1);margin-bottom:8px;font-weight:400}
+        .empty-sub{font-size:13px;color:var(--txt-3);margin-bottom:24px;line-height:1.6}
+        .panel{position:fixed;top:0;right:0;bottom:0;width:480px;background:var(--surf-2);border-left:1px solid var(--brd);padding:32px;overflow-y:auto;z-index:100;animation:slideIn 0.2s ease}
         @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
-        .panel-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:20px;font-weight:400}
-        .panel-close{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer}
+        .panel-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--txt-1);margin-bottom:20px;font-weight:400}
+        .panel-close{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--txt-2);font-size:20px;cursor:pointer}
         .field-group{margin-bottom:14px}
-        .field-label{font-size:12px;color:var(--text3);margin-bottom:5px;display:block}
-        .field{width:100%;padding:9px 12px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;border-radius:0}
+        .field-label{font-size:12px;color:var(--txt-3);margin-bottom:5px;display:block}
+        .field{width:100%;padding:9px 12px;border:1px solid var(--brd-2);background:var(--surf-3);color:var(--txt-1);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;border-radius:0}
         .field:focus{border-color:var(--amber)}
-        .field::placeholder{color:var(--text2)}
+        .field::placeholder{color:var(--txt-2)}
         .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         select.field{cursor:pointer}
-        .acuerdo-form-row{background:var(--bg3);border:1px solid var(--border);padding:14px;margin-bottom:8px;position:relative}
-        .acuerdo-form-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);margin-bottom:10px}
-        .btn-quitar-acuerdo{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer}
+        .acuerdo-form-row{background:var(--surf-3);border:1px solid var(--brd);padding:14px;margin-bottom:8px;position:relative}
+        .acuerdo-form-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--txt-2);margin-bottom:10px}
+        .btn-quitar-acuerdo{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--txt-2);font-size:16px;cursor:pointer}
         .btn-quitar-acuerdo:hover{color:var(--red)}
-        .btn-agregar-acuerdo{width:100%;padding:10px;border:1px dashed var(--border2);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;margin-bottom:16px}
+        .btn-agregar-acuerdo{width:100%;padding:10px;border:1px dashed var(--brd-2);background:transparent;color:var(--txt-2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;margin-bottom:16px}
         .btn-agregar-acuerdo:hover{border-color:var(--amber-border);color:var(--amber)}
         .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
-        @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.panel{width:100%}.metrics{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}}
+        @media(max-width:768px){.layout{grid-template-columns:1fr}.main{padding:20px 16px}.panel{width:100%}.metrics{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}}
       `}</style>
 
       <div className="layout">
-        <aside className="sidebar">
-          <div className="sidebar-logo" onClick={() => router.push('/dashboard')}><div className="mark">E</div>EOM OS</div>
-          <div className="nav-section">Ciclo actual</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard')}>Dashboard</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/diagnostico')}>Diagnóstico</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/plan')}>Plan 90 días</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/kpis')}>KPIs</div>
-          <div className="nav-section">Gestión</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/configuracion')}>Configuración</div>
-          <div className="nav-item active">Reuniones</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/mejora')}>Mejora Continua</div>
-          <div className="sidebar-bottom">
-            <button className="btn-logout" onClick={async () => { await supabase.auth.signOut(); router.push('/auth') }}>Cerrar sesión</button>
-          </div>
-        </aside>
+        <Sidebar empresaNombre={empresa?.nombre} />
 
         <main className="main">
           <div className="page-header">
@@ -275,7 +261,7 @@ export default function ReunionesPage() {
                 {expandida === r.id && (
                   <div className="reunion-body">
                     {r.acuerdos.length === 0 ? (
-                      <p style={{fontSize:'13px',color:'var(--text2)',padding:'12px 0'}}>Esta reunión no tiene acuerdos registrados.</p>
+                      <p style={{fontSize:'13px',color:'var(--txt-2)',padding:'12px 0'}}>Esta reunión no tiene acuerdos registrados.</p>
                     ) : (
                       r.acuerdos.map(a => (
                         <div key={a.id} className="acuerdo-row">
@@ -294,7 +280,7 @@ export default function ReunionesPage() {
                               </span>
                             </div>
                             {a.comentario && comentarioEditando !== a.id && (
-                              <div style={{fontSize:'12px',color:'var(--text3)',marginTop:6,padding:'8px 10px',background:'var(--bg3)',borderLeft:'2px solid var(--amber)'}}>
+                              <div style={{fontSize:'12px',color:'var(--txt-3)',marginTop:6,padding:'8px 10px',background:'var(--surf-3)',borderLeft:'2px solid var(--amber)'}}>
                                 {a.comentario}
                               </div>
                             )}
@@ -359,7 +345,7 @@ export default function ReunionesPage() {
               </div>
             </div>
 
-            <div style={{height:1, background:'var(--border)', margin:'20px 0'}} />
+            <div style={{height:1, background:'var(--brd)', margin:'20px 0'}} />
 
             <label className="field-label" style={{marginBottom: 12, display:'block'}}>Acuerdos — qué, quién, cuándo</label>
 
@@ -375,7 +361,7 @@ export default function ReunionesPage() {
                 <div className="field-row">
                   <input className="field" placeholder="Responsable" value={a.quien} onChange={e => updateNuevoAcuerdo(a.id, 'quien', e.target.value)} />
                   <div>
-                    <div style={{fontSize:10,color:'var(--text2)',marginBottom:4}}>Fecha de compromiso</div>
+                    <div style={{fontSize:10,color:'var(--txt-2)',marginBottom:4}}>Fecha de compromiso</div>
                     <input className="field" type="date" value={a.cuando} onChange={e => updateNuevoAcuerdo(a.id, 'cuando', e.target.value)} />
                   </div>
                 </div>

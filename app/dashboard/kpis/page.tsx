@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Sidebar from '../../components/Sidebar'
 
 type KPI = {
   id: string
@@ -198,103 +199,88 @@ export default function KPIsPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        :root{--bg:#07090E;--bg2:#0C0F18;--bg3:#111520;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--text:#E8EDF8;--text2:#5A6888;--text3:#8A9AB8;--amber:#D97706;--amber-dim:rgba(217,119,6,0.12);--green:#16A34A;--red:#EF4444}
-        body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+        body{background:var(--bg);color:var(--txt-1);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
         .layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-        .sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
-        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--text);padding:0 20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
+        .sidebar{background:var(--surf-2);border-right:1px solid var(--brd);padding:24px 0;display:flex;flex-direction:column}
+        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--txt-1);padding:0 20px 24px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
         .mark{width:24px;height:24px;border-radius:5px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:'DM Mono',monospace;flex-shrink:0}
-        .nav-item{padding:10px 20px;font-size:13px;color:var(--text3);cursor:pointer;transition:all 0.15s}
-        .nav-item:hover{color:var(--text);background:var(--bg3)}
+        .nav-item{padding:10px 20px;font-size:13px;color:var(--txt-3);cursor:pointer;transition:all 0.15s}
+        .nav-item:hover{color:var(--txt-1);background:var(--surf-3)}
         .nav-item.active{color:var(--amber);background:rgba(217,119,6,0.08)}
-        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2)}
-        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
-        .btn-logout{background:none;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
+        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--txt-2)}
+        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--brd)}
+        .btn-logout{background:none;border:none;color:var(--txt-2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
         .main{padding:40px;overflow-y:auto}
-        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--text);margin-bottom:4px}
-        .page-sub{font-size:14px;color:var(--text3);margin-bottom:28px}
-        .areas-overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:28px}
-        .area-card{padding:16px 18px;background:var(--bg2);cursor:pointer;transition:background 0.15s;position:relative;overflow:hidden}
-        .area-card:hover{background:var(--bg3)}
-        .area-card.active{background:var(--bg3)}
+        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--txt-1);margin-bottom:4px}
+        .page-sub{font-size:14px;color:var(--txt-3);margin-bottom:28px}
+        .areas-overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1px;background:var(--brd);border:1px solid var(--brd);margin-bottom:28px}
+        .area-card{padding:16px 18px;background:var(--surf-2);cursor:pointer;transition:background 0.15s;position:relative;overflow:hidden}
+        .area-card:hover{background:var(--surf-3)}
+        .area-card.active{background:var(--surf-3)}
         .area-card-accent{position:absolute;top:0;left:0;right:0;height:2px}
-        .area-card-nombre{font-size:11px;font-weight:500;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace}
+        .area-card-nombre{font-size:11px;font-weight:500;color:var(--txt-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace}
         .area-card-score{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;line-height:1;margin-bottom:4px}
-        .area-card-sub{font-size:11px;color:var(--text2)}
-        .area-bar{height:2px;background:var(--border);margin-top:8px}
+        .area-card-sub{font-size:11px;color:var(--txt-2)}
+        .area-bar{height:2px;background:var(--brd);margin-top:8px}
         .area-bar-fill{height:100%;transition:width 0.5s}
         .cockpit-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
-        .cockpit-title{font-size:16px;font-weight:500;color:var(--text)}
-        .cockpit-sub{font-size:13px;color:var(--text3);margin-top:2px}
+        .cockpit-title{font-size:16px;font-weight:500;color:var(--txt-1)}
+        .cockpit-sub{font-size:13px;color:var(--txt-3);margin-top:2px}
         .header-actions{display:flex;gap:8px}
-        .btn-outline{padding:8px 16px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-radius:0}
-        .btn-outline:hover{border-color:rgba(255,255,255,0.25);color:var(--text)}
+        .btn-outline{padding:8px 16px;border:1px solid var(--brd-2);background:transparent;color:var(--txt-3);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-radius:0}
+        .btn-outline:hover{border-color:rgba(255,255,255,0.25);color:var(--txt-1)}
         .btn-amber{padding:8px 16px;border:none;background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-radius:0}
         .btn-amber:hover{background:#B45309}
-        .semaforo{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:20px}
-        .sem-cell{padding:14px 18px;background:var(--bg2);text-align:center}
+        .semaforo{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--brd);border:1px solid var(--brd);margin-bottom:20px}
+        .sem-cell{padding:14px 18px;background:var(--surf-2);text-align:center}
         .sem-num{font-family:'Playfair Display',serif;font-size:24px;font-weight:400;line-height:1}
-        .sem-label{font-size:11px;color:var(--text2);margin-top:4px}
-        .kpis-list{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border)}
-        .kpi-row{background:var(--bg2);padding:16px 20px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;transition:background 0.15s}
-        .kpi-row:hover{background:var(--bg3)}
+        .sem-label{font-size:11px;color:var(--txt-2);margin-top:4px}
+        .kpis-list{display:flex;flex-direction:column;gap:1px;background:var(--brd);border:1px solid var(--brd)}
+        .kpi-row{background:var(--surf-2);padding:16px 20px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;transition:background 0.15s}
+        .kpi-row:hover{background:var(--surf-3)}
         .kpi-info{min-width:0}
         .kpi-nombre-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-        .kpi-nombre{font-size:14px;font-weight:500;color:var(--text)}
-        .kpi-ratio{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-bottom:8px}
-        .kpi-bar-track{height:2px;background:var(--border);max-width:200px}
+        .kpi-nombre{font-size:14px;font-weight:500;color:var(--txt-1)}
+        .kpi-ratio{font-family:'DM Mono',monospace;font-size:10px;color:var(--txt-2);margin-bottom:8px}
+        .kpi-bar-track{height:2px;background:var(--brd);max-width:200px}
         .kpi-bar-fill{height:100%;transition:width 0.5s}
         .kpi-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
         .kpi-valores{text-align:right}
         .kpi-actual{font-family:'Playfair Display',serif;font-size:22px;font-weight:400;line-height:1}
-        .kpi-meta-label{font-size:11px;color:var(--text2);margin-top:2px}
+        .kpi-meta-label{font-size:11px;color:var(--txt-2);margin-top:2px}
         .kpi-actions{display:flex;gap:6px}
-        .btn-mini{padding:4px 10px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;border-radius:0}
+        .btn-mini{padding:4px 10px;border:1px solid var(--brd);background:transparent;color:var(--txt-2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;border-radius:0}
         .btn-mini:hover{border-color:var(--amber);color:var(--amber)}
         .btn-mini-red:hover{border-color:var(--red);color:var(--red)}
-        .tooltip-icon{width:14px;height:14px;border-radius:50%;border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:var(--text2);cursor:help;font-family:'DM Mono',monospace;transition:all 0.15s;flex-shrink:0}
+        .tooltip-icon{width:14px;height:14px;border-radius:50%;border:1px solid var(--brd-2);display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:var(--txt-2);cursor:help;font-family:'DM Mono',monospace;transition:all 0.15s;flex-shrink:0}
         .tooltip-icon:hover{border-color:var(--amber);color:var(--amber)}
-        .edit-inline{padding:12px 20px;background:var(--bg3);border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
-        .field-inline{flex:1;padding:7px 10px;border:1px solid var(--amber-dim,rgba(217,119,6,0.2));background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;border-radius:0}
+        .edit-inline{padding:12px 20px;background:var(--surf-3);border-top:1px solid var(--brd);display:flex;gap:8px;align-items:center}
+        .field-inline{flex:1;padding:7px 10px;border:1px solid var(--amber-dim,rgba(217,119,6,0.2));background:var(--bg);color:var(--txt-1);font-family:'DM Mono',monospace;font-size:13px;outline:none;border-radius:0}
         .field-inline:focus{border-color:var(--amber)}
         .btn-save{padding:7px 14px;border:none;background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;border-radius:0;white-space:nowrap}
-        .empty-area{padding:48px;text-align:center;border:1px solid var(--border);background:var(--bg2)}
-        .empty-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:8px;font-weight:400}
-        .empty-sub{font-size:13px;color:var(--text3);margin-bottom:24px;line-height:1.6}
-        .panel{position:fixed;top:0;right:0;bottom:0;width:400px;background:var(--bg2);border-left:1px solid var(--border);padding:32px;overflow-y:auto;z-index:100;animation:slideIn 0.2s ease}
+        .empty-area{padding:48px;text-align:center;border:1px solid var(--brd);background:var(--surf-2)}
+        .empty-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--txt-1);margin-bottom:8px;font-weight:400}
+        .empty-sub{font-size:13px;color:var(--txt-3);margin-bottom:24px;line-height:1.6}
+        .panel{position:fixed;top:0;right:0;bottom:0;width:400px;background:var(--surf-2);border-left:1px solid var(--brd);padding:32px;overflow-y:auto;z-index:100;animation:slideIn 0.2s ease}
         @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
-        .panel-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:20px;font-weight:400}
-        .panel-close{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer}
-        .bib-item{padding:14px;border:1px solid var(--border);background:var(--bg3);margin-bottom:8px;cursor:pointer;transition:all 0.15s}
+        .panel-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--txt-1);margin-bottom:20px;font-weight:400}
+        .panel-close{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--txt-2);font-size:20px;cursor:pointer}
+        .bib-item{padding:14px;border:1px solid var(--brd);background:var(--surf-3);margin-bottom:8px;cursor:pointer;transition:all 0.15s}
         .bib-item:hover{border-color:rgba(217,119,6,0.3);background:var(--bg)}
-        .bib-nombre{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
-        .bib-ratio{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2)}
+        .bib-nombre{font-size:13px;font-weight:500;color:var(--txt-1);margin-bottom:3px}
+        .bib-ratio{font-family:'DM Mono',monospace;font-size:10px;color:var(--txt-2)}
         .field-group{margin-bottom:14px}
-        .field-label{font-size:12px;color:var(--text3);margin-bottom:5px;display:block}
-        .field{width:100%;padding:9px 12px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;border-radius:0}
+        .field-label{font-size:12px;color:var(--txt-3);margin-bottom:5px;display:block}
+        .field{width:100%;padding:9px 12px;border:1px solid var(--brd-2);background:var(--surf-3);color:var(--txt-1);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;border-radius:0}
         .field:focus{border-color:var(--amber)}
-        .field::placeholder{color:var(--text2)}
+        .field::placeholder{color:var(--txt-2)}
         select.field{cursor:pointer}
         .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
-        @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.panel{width:100%}.areas-overview{grid-template-columns:1fr 1fr}}
+        @media(max-width:768px){.layout{grid-template-columns:1fr}.main{padding:20px 16px}.panel{width:100%}.areas-overview{grid-template-columns:1fr 1fr}}
       `}</style>
 
       <div className="layout">
-        <aside className="sidebar">
-          <div className="sidebar-logo" onClick={() => router.push('/dashboard')}><div className="mark">E</div>EOM OS</div>
-          <div className="nav-section">Ciclo actual</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard')}>Dashboard</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/diagnostico')}>Diagnóstico</div>
-          <div className="nav-item" onClick={() => router.push('/dashboard/plan')}>Plan 90 días</div>
-          <div className="nav-item active">KPIs</div>
-          <div className="nav-section">Gestión</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/configuracion')}>Configuración</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/reuniones')}>Reuniones</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/mejora')}>Mejora Continua</div>
-          <div className="sidebar-bottom">
-            <button className="btn-logout" onClick={async () => { await supabase.auth.signOut(); router.push('/auth') }}>Cerrar sesión</button>
-          </div>
-        </aside>
+        <Sidebar empresaNombre={empresa?.nombre} />
 
         <main className="main">
           <div className="page-title">Cockpit de KPIs</div>
@@ -311,7 +297,7 @@ export default function KPIsPage() {
                 <div key={area} className={`area-card ${areaActiva === area ? 'active' : ''}`} onClick={() => setAreaActiva(area)}>
                   <div className="area-card-accent" style={{background: color}} />
                   <div className="area-card-nombre">{area}</div>
-                  <div className="area-card-score" style={{color: score !== null ? color : 'var(--text2)'}}>
+                  <div className="area-card-score" style={{color: score !== null ? color : 'var(--txt-2)'}}>
                     {score !== null ? `${score}%` : '—'}
                   </div>
                   <div className="area-card-sub">
@@ -402,7 +388,7 @@ export default function KPIsPage() {
                           </div>
                           <div className="kpi-right">
                             <div className="kpi-valores">
-                              <div className="kpi-actual" style={{color: kpi.actual > 0 ? color : 'var(--text2)'}}>
+                              <div className="kpi-actual" style={{color: kpi.actual > 0 ? color : 'var(--txt-2)'}}>
                                 {kpi.actual > 0 ? formatVal(kpi, kpi.actual) : '—'}
                               </div>
                               <div className="kpi-meta-label">
@@ -419,7 +405,7 @@ export default function KPIsPage() {
                         </div>
                         {editando === kpi.id && (
                           <div className="edit-inline">
-                            <span style={{fontSize:'12px',color:'var(--text2)',flexShrink:0}}>Valor actual ({UNIDAD_LABELS[kpi.unidad]}):</span>
+                            <span style={{fontSize:'12px',color:'var(--txt-2)',flexShrink:0}}>Valor actual ({UNIDAD_LABELS[kpi.unidad]}):</span>
                             <input
                               className="field-inline"
                               type="number"
@@ -475,11 +461,11 @@ export default function KPIsPage() {
           <div className="panel">
             <button className="panel-close" onClick={() => setShowBiblioteca(false)}>×</button>
             <div className="panel-title">Biblioteca — {areaActiva}</div>
-            <p style={{fontSize:'13px',color:'var(--text3)',marginBottom:'16px',lineHeight:1.6}}>
+            <p style={{fontSize:'13px',color:'var(--txt-3)',marginBottom:'16px',lineHeight:1.6}}>
               KPIs sugeridos para esta área. Solo aparecen los que no tienes activos.
             </p>
             {bibliotecaArea.length === 0 ? (
-              <p style={{fontSize:'13px',color:'var(--text2)'}}>Ya tienes todos los KPIs sugeridos para esta área.</p>
+              <p style={{fontSize:'13px',color:'var(--txt-2)'}}>Ya tienes todos los KPIs sugeridos para esta área.</p>
             ) : (
               bibliotecaArea.map((k, i) => (
                 <div key={i} className="bib-item" onClick={() => { agregarDesdeBiblioteca(k); setShowBiblioteca(false) }}>
@@ -527,7 +513,7 @@ export default function KPIsPage() {
             </div>
             <div className="field-group" style={{display:'flex',alignItems:'center',gap:10}}>
               <input type="checkbox" id="esInverso" checked={formEsInverso} onChange={e => setFormEsInverso(e.target.checked)} style={{width:16,height:16}} />
-              <label htmlFor="esInverso" style={{fontSize:'13px',color:'var(--text3)',cursor:'pointer'}}>
+              <label htmlFor="esInverso" style={{fontSize:'13px',color:'var(--txt-3)',cursor:'pointer'}}>
                 Este KPI es mejor cuando es más bajo (ej. días de espera, ausentismo, costos)
               </label>
             </div>

@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Sidebar from '../../components/Sidebar'
 
 const PREGUNTAS = [
   {dim:'Finanzas',texto:'¿Conoces tu utilidad neta del mes anterior antes del día 10?'},
@@ -102,78 +103,63 @@ export default function DiagnosticoPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        :root{--bg:#07090E;--bg2:#0C0F18;--bg3:#111520;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--text:#E8EDF8;--text2:#5A6888;--text3:#8A9AB8;--amber:#D97706;--amber-light:#FCD34D;--amber-dim:rgba(217,119,6,0.12);--green:#16A34A;--green-light:#4ADE80;--red:#EF4444}
-        body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+        body{background:var(--bg);color:var(--txt-1);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
         .layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-        .sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
-        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--text);padding:0 20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
+        .sidebar{background:var(--surf-2);border-right:1px solid var(--brd);padding:24px 0;display:flex;flex-direction:column}
+        .sidebar-logo{font-family:'Playfair Display',serif;font-size:16px;color:var(--txt-1);padding:0 20px 24px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
         .mark{width:24px;height:24px;border-radius:5px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:'DM Mono',monospace;flex-shrink:0}
-        .nav-item{padding:10px 20px;font-size:13px;color:var(--text3);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.15s}
-        .nav-item:hover{color:var(--text);background:var(--bg3)}
+        .nav-item{padding:10px 20px;font-size:13px;color:var(--txt-3);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.15s}
+        .nav-item:hover{color:var(--txt-1);background:var(--surf-3)}
         .nav-item.active{color:var(--amber);background:rgba(217,119,6,0.08)}
-        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2)}
-        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
-        .btn-logout{background:none;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
+        .nav-section{padding:16px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--txt-2)}
+        .sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--brd)}
+        .btn-logout{background:none;border:none;color:var(--txt-2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
         .main{padding:40px;overflow-y:auto}
-        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--text);margin-bottom:4px}
-        .page-sub{font-size:14px;color:var(--text3);margin-bottom:32px}
-        .score-hero{background:var(--bg2);border:1px solid var(--border);padding:36px;margin-bottom:24px;display:grid;grid-template-columns:auto 1fr;gap:40px;align-items:center}
+        .page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--txt-1);margin-bottom:4px}
+        .page-sub{font-size:14px;color:var(--txt-3);margin-bottom:32px}
+        .score-hero{background:var(--surf-2);border:1px solid var(--brd);padding:36px;margin-bottom:24px;display:grid;grid-template-columns:auto 1fr;gap:40px;align-items:center}
         .score-num{font-family:'Playfair Display',serif;font-size:80px;font-weight:400;line-height:1}
-        .score-label{font-size:13px;color:var(--text2);margin-top:4px}
+        .score-label{font-size:13px;color:var(--txt-2);margin-top:4px}
         .score-estado{display:inline-block;padding:6px 16px;font-size:14px;font-weight:500;margin-bottom:12px}
-        .score-desc{font-size:15px;color:var(--text3);line-height:1.7;max-width:480px}
-        .dims-tabs{display:flex;gap:0;margin-bottom:0;border:1px solid var(--border);border-bottom:none;width:fit-content}
-        .dim-tab{padding:10px 20px;border:none;background:transparent;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all 0.15s;border-right:1px solid var(--border);position:relative}
+        .score-desc{font-size:15px;color:var(--txt-3);line-height:1.7;max-width:480px}
+        .dims-tabs{display:flex;gap:0;margin-bottom:0;border:1px solid var(--brd);border-bottom:none;width:fit-content}
+        .dim-tab{padding:10px 20px;border:none;background:transparent;color:var(--txt-3);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all 0.15s;border-right:1px solid var(--brd);position:relative}
         .dim-tab:last-child{border-right:none}
-        .dim-tab:hover{color:var(--text);background:var(--bg2)}
-        .dim-tab.active{color:var(--text);background:var(--bg2)}
+        .dim-tab:hover{color:var(--txt-1);background:var(--surf-2)}
+        .dim-tab.active{color:var(--txt-1);background:var(--surf-2)}
         .dim-tab.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
-        .dim-panel{background:var(--bg2);border:1px solid var(--border);padding:28px;margin-bottom:24px}
+        .dim-panel{background:var(--surf-2);border:1px solid var(--brd);padding:28px;margin-bottom:24px}
         .dim-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
         .dim-score-big{font-family:'Playfair Display',serif;font-size:48px;font-weight:400;line-height:1}
-        .dim-bar-track{height:4px;background:var(--border);flex:1;min-width:120px}
+        .dim-bar-track{height:4px;background:var(--brd);flex:1;min-width:120px}
         .dim-bar-fill{height:100%;transition:width 0.8s ease}
-        .dim-analisis{font-size:14px;color:var(--text3);line-height:1.75;padding:16px;background:var(--bg3);border-left:2px solid;margin-bottom:24px}
-        .preguntas-list{display:flex;flex-direction:column;gap:1px;background:var(--border)}
-        .pregunta-row{background:var(--bg2);padding:16px 20px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;transition:background 0.15s}
-        .pregunta-row:hover{background:var(--bg3)}
-        .pregunta-texto{font-size:13px;color:var(--text);line-height:1.5}
+        .dim-analisis{font-size:14px;color:var(--txt-3);line-height:1.75;padding:16px;background:var(--surf-3);border-left:2px solid;margin-bottom:24px}
+        .preguntas-list{display:flex;flex-direction:column;gap:1px;background:var(--brd)}
+        .pregunta-row{background:var(--surf-2);padding:16px 20px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;transition:background 0.15s}
+        .pregunta-row:hover{background:var(--surf-3)}
+        .pregunta-texto{font-size:13px;color:var(--txt-1);line-height:1.5}
         .pregunta-resp{display:flex;align-items:center;gap:8px;flex-shrink:0}
         .resp-dots{display:flex;gap:3px}
-        .resp-dot{width:8px;height:8px;border-radius:50%;background:var(--border2)}
-        .resp-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);white-space:nowrap}
+        .resp-dot{width:8px;height:8px;border-radius:50%;background:var(--brd-2)}
+        .resp-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--txt-2);white-space:nowrap}
         .radar-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
-        .dim-summary-card{background:var(--bg2);border:1px solid var(--border);padding:20px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden}
-        .dim-summary-card:hover{background:var(--bg3)}
+        .dim-summary-card{background:var(--surf-2);border:1px solid var(--brd);padding:20px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden}
+        .dim-summary-card:hover{background:var(--surf-3)}
         .dim-summary-card.selected{border-color:rgba(255,255,255,0.2)}
         .dim-summary-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;transition:opacity 0.15s}
         .dim-summary-card.selected::before{opacity:1}
         .dim-summary-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
         .dim-summary-score{font-family:'Playfair Display',serif;font-size:36px;font-weight:400;line-height:1;margin-bottom:8px}
-        .dim-summary-bar{height:2px;background:var(--border);margin-bottom:6px}
+        .dim-summary-bar{height:2px;background:var(--brd);margin-bottom:6px}
         .dim-summary-fill{height:100%;transition:width 0.6s ease}
         .dim-summary-estado{font-size:11px}
         .ciclo-badge{display:inline-flex;align-items:center;gap:8px;background:var(--amber-dim);border:1px solid var(--amber-border,rgba(217,119,6,0.25));padding:6px 14px;margin-bottom:24px}
         .ciclo-badge-text{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber)}
-        @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.score-hero{grid-template-columns:1fr}.radar-wrap{grid-template-columns:1fr 1fr}.pregunta-row{grid-template-columns:1fr}}
+        @media(max-width:768px){.layout{grid-template-columns:1fr}.main{padding:20px 16px}.score-hero{grid-template-columns:1fr}.radar-wrap{grid-template-columns:1fr 1fr}.pregunta-row{grid-template-columns:1fr}}
       `}</style>
 
       <div className="layout">
-        <aside className="sidebar">
-          <div className="sidebar-logo" onClick={()=>router.push('/dashboard')}><div className="mark">E</div>EOM OS</div>
-          <div className="nav-section">Ciclo actual</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard')}>Dashboard</div>
-          <div className="nav-item active">Diagnóstico</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/plan')}>Plan 90 días</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/kpis')}>KPIs</div>
-          <div className="nav-section">Gestión</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/configuracion')}>Configuración</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/reuniones')}>Reuniones</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/mejora')}>Mejora Continua</div>
-          <div className="sidebar-bottom">
-            <button className="btn-logout" onClick={async()=>{await supabase.auth.signOut();router.push('/auth')}}>Cerrar sesión</button>
-          </div>
-        </aside>
+        <Sidebar empresaNombre={empresa?.nombre} />
 
         <main className="main">
           <div className="page-title">Diagnóstico EOM</div>
@@ -188,16 +174,16 @@ export default function DiagnosticoPage() {
             const pctCiclo = Math.round((transcurridos/90)*100)
             const fmtDate = (d: Date) => d.toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'})
             return (
-              <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderLeft:'2px solid var(--amber)',padding:'20px 24px',marginBottom:'24px'}}>
+              <div style={{background:'var(--surf-2)',border:'1px solid var(--brd)',borderLeft:'2px solid var(--amber)',padding:'20px 24px',marginBottom:'24px'}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:12}}>
                   <div style={{fontFamily:"'DM Mono',monospace",fontSize:'10px',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--amber)'}}>Ciclo 1 · En curso</div>
                   <div style={{display:'flex',gap:24}}>
-                    <div style={{fontSize:'12px',color:'var(--text2)'}}>📅 Inicio: <span style={{color:'var(--text3)'}}>{fmtDate(inicio)}</span></div>
-                    <div style={{fontSize:'12px',color:'var(--text2)'}}>🏁 Cierre: <span style={{color:'var(--text3)'}}>{fmtDate(fin)}</span></div>
-                    <div style={{fontSize:'12px',color:'var(--text2)'}}><span style={{color:'var(--amber)',fontWeight:500}}>{restantes} días restantes</span></div>
+                    <div style={{fontSize:'12px',color:'var(--txt-2)'}}>📅 Inicio: <span style={{color:'var(--txt-3)'}}>{fmtDate(inicio)}</span></div>
+                    <div style={{fontSize:'12px',color:'var(--txt-2)'}}>🏁 Cierre: <span style={{color:'var(--txt-3)'}}>{fmtDate(fin)}</span></div>
+                    <div style={{fontSize:'12px',color:'var(--txt-2)'}}><span style={{color:'var(--amber)',fontWeight:500}}>{restantes} días restantes</span></div>
                   </div>
                 </div>
-                <div style={{height:'3px',background:'var(--border)'}}>
+                <div style={{height:'3px',background:'var(--brd)'}}>
                   <div style={{height:'100%',background:'var(--amber)',width:`${pctCiclo}%`}} />
                 </div>
               </div>
@@ -275,10 +261,10 @@ export default function DiagnosticoPage() {
                   <div className="dim-header">
                     <div>
                       <div style={{fontFamily:"'DM Mono',monospace",fontSize:'10px',letterSpacing:'0.1em',textTransform:'uppercase',color,marginBottom:'8px'}}>{dim}</div>
-                      <div className="dim-score-big" style={{color:e.color}}>{s}<span style={{fontSize:'20px',color:'var(--text2)',fontFamily:'DM Sans,sans-serif',fontWeight:400}}> / 100</span></div>
+                      <div className="dim-score-big" style={{color:e.color}}>{s}<span style={{fontSize:'20px',color:'var(--txt-2)',fontFamily:'DM Sans,sans-serif',fontWeight:400}}> / 100</span></div>
                     </div>
                     <div style={{flex:1,maxWidth:'200px'}}>
-                      <div style={{fontSize:'11px',color:'var(--text2)',marginBottom:'8px',textAlign:'right'}}>{e.nombre}</div>
+                      <div style={{fontSize:'11px',color:'var(--txt-2)',marginBottom:'8px',textAlign:'right'}}>{e.nombre}</div>
                       <div className="dim-bar-track">
                         <div className="dim-bar-fill" style={{width:`${s}%`,background:e.color}} />
                       </div>
@@ -289,7 +275,7 @@ export default function DiagnosticoPage() {
                     {analisis}
                   </div>
 
-                  <div style={{fontSize:'12px',color:'var(--text2)',marginBottom:'12px',fontFamily:"'DM Mono',monospace",textTransform:'uppercase',letterSpacing:'0.08em'}}>Respuestas del diagnóstico</div>
+                  <div style={{fontSize:'12px',color:'var(--txt-2)',marginBottom:'12px',fontFamily:"'DM Mono',monospace",textTransform:'uppercase',letterSpacing:'0.08em'}}>Respuestas del diagnóstico</div>
 
                   <div className="preguntas-list">
                     {pregsDelDim.map((p) => {
@@ -309,14 +295,14 @@ export default function DiagnosticoPage() {
                                     <div key={n} className="resp-dot" style={{
                                       background: n <= val
                                         ? val >= 4 ? '#16A34A' : val >= 3 ? '#D97706' : '#EF4444'
-                                        : 'var(--border2)'
+                                        : 'var(--brd-2)'
                                     }} />
                                   ))}
                                 </div>
                                 <span className="resp-val">{OPCIONES[respIdx]}</span>
                               </>
                             ) : (
-                              <span className="resp-val" style={{color:'var(--text2)'}}>Sin dato (ciclo anterior a esta versión)</span>
+                              <span className="resp-val" style={{color:'var(--txt-2)'}}>Sin dato (ciclo anterior a esta versión)</span>
                             )}
                           </div>
                         </div>
