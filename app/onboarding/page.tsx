@@ -66,6 +66,7 @@ export default function Onboarding() {
   const [userId, setUserId] = useState<string|null>(null)
   const [paso, setPaso] = useState(1)
   const [guardando, setGuardando] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   // Paso 1 — Empresa
   const [nombre, setNombre] = useState('')
@@ -141,13 +142,14 @@ export default function Onboarding() {
   async function guardarDiagnostico() {
     if (!userId) return
     setGuardando(true)
+    setErrorMsg('')
     const score_total = calcScore(respuestas)
     const scores: Record<string,number> = {}
     DIMS.forEach(d => {scores[d] = calcDimScore(d, respuestas)})
     const estado = getEstado(score_total)
     const planGenerado = getPlan(scores)
 
-    await supabase.from('diagnosticos_empresa').insert({
+    const {error} = await supabase.from('diagnosticos_empresa').insert({
       user_id: userId,
       scores,
       score_total,
@@ -155,6 +157,13 @@ export default function Onboarding() {
       ciclo: 1,
       respuestas,
     })
+
+    if (error) {
+      console.error('Error guardando diagnóstico:', error)
+      setErrorMsg('No pudimos guardar tu diagnóstico. Revisa tu conexión e inténtalo de nuevo.')
+      setGuardando(false)
+      return
+    }
 
     setResultado({score_total, scores, estado})
     setPlan(planGenerado)
@@ -165,7 +174,14 @@ export default function Onboarding() {
   async function finalizarOnboarding() {
     if (!userId) return
     setGuardando(true)
-    await supabase.from('empresas_empresa').upsert({user_id: userId, onboarding_completo: true}, {onConflict: 'user_id'})
+    setErrorMsg('')
+    const {error} = await supabase.from('empresas_empresa').upsert({user_id: userId, onboarding_completo: true}, {onConflict: 'user_id'})
+    if (error) {
+      console.error('Error finalizando onboarding:', error)
+      setErrorMsg('No pudimos completar tu registro. Inténtalo de nuevo en unos segundos.')
+      setGuardando(false)
+      return
+    }
     setGuardando(false)
     router.push('/dashboard')
   }
@@ -255,6 +271,7 @@ export default function Onboarding() {
         .btn-primary{width:100%;padding:16px;border:none;background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:background 0.15s;border-radius:0;margin-top:8px}
         .btn-primary:hover{background:#B45309}
         .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+        .error-banner{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#EF4444;font-size:13px;padding:12px 16px;margin-bottom:16px;line-height:1.5}
         .btn-back{background:none;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0;margin-bottom:24px}
         .btn-back:hover{color:var(--text)}
         @media(max-width:640px){.field-row{grid-template-columns:1fr}.dims-grid{grid-template-columns:1fr 1fr}.preg-opciones{flex-wrap:wrap}}
@@ -457,6 +474,8 @@ export default function Onboarding() {
               </div>
             ))}
 
+            {errorMsg && <div className="error-banner">{errorMsg}</div>}
+
             <button
               className="btn-primary"
               disabled={!completo||guardando}
@@ -508,6 +527,8 @@ export default function Onboarding() {
                 </div>
               </div>
             ))}
+
+            {errorMsg && <div className="error-banner">{errorMsg}</div>}
 
             <button className="btn-primary" style={{marginTop:'32px'}} onClick={finalizarOnboarding} disabled={guardando}>
               {guardando ? 'Preparando tu dashboard...' : 'Entrar al dashboard →'}
