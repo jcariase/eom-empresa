@@ -40,6 +40,8 @@ const PLAN_BASE: Record<string, {foco:string, acciones:string[]}> = {
   },
 }
 
+type EstadoAccion = 'pendiente' | 'en_proceso' | 'completada'
+
 type Accion = {
   id: string
   texto: string
@@ -47,6 +49,7 @@ type Accion = {
   area: string
   fecha: string
   completada: boolean
+  estado?: EstadoAccion
   dim: string
 }
 
@@ -55,6 +58,11 @@ type Foco = {
   dim: string
   foco: string
   acciones: Accion[]
+}
+
+function getEstadoReal(a: Accion): EstadoAccion {
+  if (a.estado) return a.estado
+  return a.completada ? 'completada' : 'pendiente'
 }
 
 export default function PlanPage() {
@@ -66,6 +74,7 @@ export default function PlanPage() {
   const [diasRestantes, setDiasRestantes] = useState(90)
   const [editando, setEditando] = useState<string|null>(null)
   const [areas, setAreas] = useState<string[]>([])
+  const [vista, setVista] = useState<'lista' | 'tablero'>('lista')
 
   useEffect(() => {
     async function load() {
@@ -119,7 +128,19 @@ export default function PlanPage() {
     setSaving(true)
     const nuevos = focos.map(f => f.id === focoId ? {
       ...f,
-      acciones: f.acciones.map(a => a.id === accionId ? {...a, completada: !a.completada} : a)
+      acciones: f.acciones.map(a => a.id === accionId ? {...a, completada: !a.completada, estado: (!a.completada ? 'completada' : 'pendiente') as EstadoAccion} : a)
+    } : f)
+    setFocos(nuevos)
+    const foco = nuevos.find(f => f.id === focoId)
+    if (foco) await supabase.from('plan_empresa').update({acciones: foco.acciones}).eq('id', focoId)
+    setSaving(false)
+  }
+
+  async function cambiarEstado(focoId: string, accionId: string, nuevoEstado: EstadoAccion) {
+    setSaving(true)
+    const nuevos = focos.map(f => f.id === focoId ? {
+      ...f,
+      acciones: f.acciones.map(a => a.id === accionId ? {...a, estado: nuevoEstado, completada: nuevoEstado === 'completada'} : a)
     } : f)
     setFocos(nuevos)
     const foco = nuevos.find(f => f.id === focoId)
@@ -255,10 +276,22 @@ export default function PlanPage() {
               <div className="page-title">Plan 90 días</div>
               <div className="page-sub">{empresa?.nombre} · Ciclo 1 · {focos.length} focos prioritarios</div>
             </div>
-            <div className="ciclo-badge">
-              <div>
-                <div className="ciclo-num">{diasRestantes}</div>
-                <div className="ciclo-label">días restantes</div>
+            <div style={{display:'flex',alignItems:'center',gap:16}}>
+              <div style={{display:'flex',border:'1px solid var(--border2)'}}>
+                <button
+                  onClick={()=>setVista('lista')}
+                  style={{padding:'8px 16px',border:'none',background:vista==='lista'?'var(--amber-dim,rgba(217,119,6,0.12))':'transparent',color:vista==='lista'?'var(--amber)':'var(--text3)',fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:'pointer',borderRight:'1px solid var(--border2)'}}
+                >Lista</button>
+                <button
+                  onClick={()=>setVista('tablero')}
+                  style={{padding:'8px 16px',border:'none',background:vista==='tablero'?'var(--amber-dim,rgba(217,119,6,0.12))':'transparent',color:vista==='tablero'?'var(--amber)':'var(--text3)',fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:'pointer'}}
+                >Tablero</button>
+              </div>
+              <div className="ciclo-badge">
+                <div>
+                  <div className="ciclo-num">{diasRestantes}</div>
+                  <div className="ciclo-label">días restantes</div>
+                </div>
               </div>
             </div>
           </div>
@@ -277,6 +310,56 @@ export default function PlanPage() {
             {saving && <div className="saving-badge">Guardando...</div>}
           </div>
 
+          {vista === 'tablero' ? (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:16}}>
+              {(['pendiente','en_proceso','completada'] as EstadoAccion[]).map(estadoCol => {
+                const labels: Record<EstadoAccion,string> = {pendiente:'Por hacer', en_proceso:'En proceso', completada:'Completado'}
+                const colColors: Record<EstadoAccion,string> = {pendiente:'#5A6888', en_proceso:'#D97706', completada:'#16A34A'}
+                const todasLasAcciones = focos.flatMap(f => f.acciones.map(a => ({...a, focoId: f.id, focoNombre: f.foco, focoDim: f.dim})))
+                const accionesCol = todasLasAcciones.filter(a => getEstadoReal(a) === estadoCol)
+                return (
+                  <div key={estadoCol} style={{background:'var(--bg2)',border:'1px solid var(--border)'}}>
+                    <div style={{padding:'14px 16px',borderBottom:'1px solid var(--border)',borderTop:`2px solid ${colColors[estadoCol]}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                      <span style={{fontSize:13,fontWeight:500,color:'var(--text)'}}>{labels[estadoCol]}</span>
+                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:'var(--text2)'}}>{accionesCol.length}</span>
+                    </div>
+                    <div style={{padding:'12px',display:'flex',flexDirection:'column',gap:8,minHeight:120}}>
+                      {accionesCol.length === 0 && (
+                        <div style={{fontSize:12,color:'var(--text2)',textAlign:'center',padding:'20px 0'}}>Sin acciones aquí</div>
+                      )}
+                      {accionesCol.map(a => {
+                        const dimColor = DIM_COLORS[a.focoDim] || '#D97706'
+                        return (
+                          <div key={a.id} style={{background:'var(--bg3)',border:'1px solid var(--border)',padding:'12px 14px'}}>
+                            <div style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:dimColor,textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>{a.focoDim}{a.area ? ` · ${a.area}` : ''}</div>
+                            <div style={{fontSize:13,color:'var(--text)',lineHeight:1.5,marginBottom:8}}>{a.texto || 'Sin descripción'}</div>
+                            {(a.responsable || a.fecha) && (
+                              <div style={{display:'flex',gap:10,fontSize:11,color:'var(--text2)',marginBottom:10}}>
+                                {a.responsable && <span>👤 {a.responsable}</span>}
+                                {a.fecha && <span>📅 {a.fecha}</span>}
+                              </div>
+                            )}
+                            <div style={{display:'flex',gap:6}}>
+                              {(['pendiente','en_proceso','completada'] as EstadoAccion[]).filter(e => e !== estadoCol).map(destino => (
+                                <button
+                                  key={destino}
+                                  onClick={() => cambiarEstado(a.focoId, a.id, destino)}
+                                  style={{flex:1,padding:'5px 8px',fontSize:10,border:`1px solid ${colColors[destino]}33`,background:'transparent',color:colColors[destino],cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}
+                                >
+                                  → {labels[destino]}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+          <>
           {focos.map(foco => {
             const color = DIM_COLORS[foco.dim] || '#D97706'
             const focoDone = foco.acciones.filter(a=>a.completada).length
@@ -354,6 +437,8 @@ export default function PlanPage() {
               </div>
             )
           })}
+          </>
+          )}
         </main>
       </div>
     </>
