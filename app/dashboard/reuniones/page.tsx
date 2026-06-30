@@ -11,6 +11,7 @@ type Acuerdo = {
   quien: string
   cuando: string
   completado: boolean
+  comentario: string
 }
 
 type Reunion = {
@@ -31,12 +32,13 @@ export default function ReunionesPage() {
   const [saving, setSaving] = useState(false)
   const [showNueva, setShowNueva] = useState(false)
   const [expandida, setExpandida] = useState<string | null>(null)
+  const [comentarioEditando, setComentarioEditando] = useState<string | null>(null)
 
   const [nuevoTitulo, setNuevoTitulo] = useState('')
   const [nuevaArea, setNuevaArea] = useState('')
   const [nuevaFecha, setNuevaFecha] = useState(new Date().toISOString().split('T')[0])
   const [nuevosAcuerdos, setNuevosAcuerdos] = useState<Acuerdo[]>([
-    {id: crypto.randomUUID(), que: '', quien: '', cuando: '', completado: false}
+    {id: crypto.randomUUID(), que: '', quien: '', cuando: '', completado: false, comentario: ''}
   ])
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function ReunionesPage() {
   }, [router])
 
   function agregarFilaAcuerdo() {
-    setNuevosAcuerdos(prev => [...prev, {id: crypto.randomUUID(), que: '', quien: '', cuando: '', completado: false}])
+    setNuevosAcuerdos(prev => [...prev, {id: crypto.randomUUID(), que: '', quien: '', cuando: '', completado: false, comentario: ''}])
   }
 
   function quitarFilaAcuerdo(id: string) {
@@ -85,7 +87,7 @@ export default function ReunionesPage() {
     if (error) { console.error(error); setSaving(false); return }
     setReuniones(prev => [nueva, ...prev])
     setNuevoTitulo(''); setNuevaFecha(new Date().toISOString().split('T')[0])
-    setNuevosAcuerdos([{id: crypto.randomUUID(), que: '', quien: '', cuando: '', completado: false}])
+    setNuevosAcuerdos([{id: crypto.randomUUID(), que: '', quien: '', cuando: '', completado: false, comentario: ''}])
     setShowNueva(false)
     setSaving(false)
   }
@@ -98,6 +100,17 @@ export default function ReunionesPage() {
     setReuniones(nuevas)
     const reunion = nuevas.find(r => r.id === reunionId)
     if (reunion) await supabase.from('reuniones_empresa').update({acuerdos: reunion.acuerdos}).eq('id', reunionId)
+  }
+
+  async function guardarComentario(reunionId: string, acuerdoId: string, comentario: string) {
+    const nuevas = reuniones.map(r => r.id === reunionId ? {
+      ...r,
+      acuerdos: r.acuerdos.map(a => a.id === acuerdoId ? {...a, comentario} : a)
+    } : r)
+    setReuniones(nuevas)
+    const reunion = nuevas.find(r => r.id === reunionId)
+    if (reunion) await supabase.from('reuniones_empresa').update({acuerdos: reunion.acuerdos}).eq('id', reunionId)
+    setComentarioEditando(null)
   }
 
   async function eliminarReunion(id: string) {
@@ -264,8 +277,43 @@ export default function ReunionesPage() {
                             <div className={`acuerdo-que ${a.completado?'done':''}`}>{a.que}</div>
                             <div className="acuerdo-meta">
                               {a.quien && <span className="acuerdo-meta-item">👤 {a.quien}</span>}
-                              {a.cuando && <span className="acuerdo-meta-item">📅 {fmtDate(a.cuando)}</span>}
+                              {a.cuando && <span className="acuerdo-meta-item">📅 compromiso: {fmtDate(a.cuando)}</span>}
+                              <span
+                                className="acuerdo-meta-item"
+                                style={{cursor:'pointer', color:'var(--amber)', textDecoration:'underline'}}
+                                onClick={() => setComentarioEditando(comentarioEditando === a.id ? null : a.id)}
+                              >
+                                {a.comentario ? 'Editar comentario' : '+ Agregar comentario'}
+                              </span>
                             </div>
+                            {a.comentario && comentarioEditando !== a.id && (
+                              <div style={{fontSize:'12px',color:'var(--text3)',marginTop:6,padding:'8px 10px',background:'var(--bg3)',borderLeft:'2px solid var(--amber)'}}>
+                                {a.comentario}
+                              </div>
+                            )}
+                            {comentarioEditando === a.id && (
+                              <div style={{marginTop:8,display:'flex',gap:8}}>
+                                <input
+                                  className="field"
+                                  placeholder="Ej: se atrasó por falta de stock, nueva fecha estimada..."
+                                  defaultValue={a.comentario}
+                                  autoFocus
+                                  style={{flex:1}}
+                                  onKeyDown={e => e.key === 'Enter' && guardarComentario(r.id, a.id, (e.target as HTMLInputElement).value)}
+                                  id={`comentario-${a.id}`}
+                                />
+                                <button
+                                  className="btn-amber"
+                                  style={{padding:'9px 16px',fontSize:12}}
+                                  onClick={() => {
+                                    const input = document.getElementById(`comentario-${a.id}`) as HTMLInputElement
+                                    guardarComentario(r.id, a.id, input.value)
+                                  }}
+                                >
+                                  Guardar
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))
@@ -319,7 +367,10 @@ export default function ReunionesPage() {
                 </div>
                 <div className="field-row">
                   <input className="field" placeholder="Responsable" value={a.quien} onChange={e => updateNuevoAcuerdo(a.id, 'quien', e.target.value)} />
-                  <input className="field" type="date" value={a.cuando} onChange={e => updateNuevoAcuerdo(a.id, 'cuando', e.target.value)} />
+                  <div>
+                    <div style={{fontSize:10,color:'var(--text2)',marginBottom:4}}>Fecha de compromiso</div>
+                    <input className="field" type="date" value={a.cuando} onChange={e => updateNuevoAcuerdo(a.id, 'cuando', e.target.value)} />
+                  </div>
                 </div>
               </div>
             ))}
