@@ -66,6 +66,17 @@ const BIBLIOTECA: Record<string, Omit<KPI, 'id' | 'actual' | 'area'>[]> = {
 
 const AREAS_DEFAULT = ['Comercial', 'Operaciones', 'Administración y Finanzas', 'Logística y Bodega', 'Personas y RRHH', 'Servicio Técnico']
 
+function getBibliotecaKey(area: string): string | null {
+  const normalizado = area.toLowerCase()
+  if (normalizado.includes('comercial') || normalizado.includes('venta')) return 'Comercial'
+  if (normalizado.includes('operacion') || normalizado.includes('producción') || normalizado.includes('produccion')) return 'Operaciones'
+  if (normalizado.includes('administra') || normalizado.includes('finanza') || normalizado.includes('contab')) return 'Administración y Finanzas'
+  if (normalizado.includes('logistic') || normalizado.includes('logíst') || normalizado.includes('bodega') || normalizado.includes('inventario')) return 'Logística y Bodega'
+  if (normalizado.includes('persona') || normalizado.includes('rrhh') || normalizado.includes('recursos human') || normalizado.includes('talento')) return 'Personas y RRHH'
+  if (normalizado.includes('servicio técnico') || normalizado.includes('servicio tecnico') || normalizado.includes('postventa') || normalizado.includes('soporte')) return 'Servicio Técnico'
+  return null
+}
+
 function getColor(kpi: KPI) {
   if (kpi.meta === 0 || kpi.actual === 0) return '#5A6888'
   const inverso = ['Días de cobranza (DSO)', 'Ausentismo', 'Rotación anual', 'Gastos fijos vs presupuesto', 'Tiempo de ciclo de venta', 'Tiempo respuesta a clientes', 'Tiempo de respuesta técnica', 'Tiempo de despacho', 'Quiebres de stock', 'Equipos en garantía activa', 'Costo de retrabajo'].includes(kpi.nombre)
@@ -177,7 +188,8 @@ export default function KPIsPage() {
   }
 
   const kpisArea = areaActiva ? kpis.filter(k => k.area === areaActiva) : []
-  const bibliotecaArea = areaActiva ? (BIBLIOTECA[areaActiva] || []).filter(b => !kpis.find(k => k.nombre === b.nombre && k.area === areaActiva)) : []
+  const bibliotecaKey = areaActiva ? getBibliotecaKey(areaActiva) : null
+  const bibliotecaArea = areaActiva && bibliotecaKey ? (BIBLIOTECA[bibliotecaKey] || []).filter(b => !kpis.find(k => k.nombre === b.nombre && k.area === areaActiva)) : []
 
   if (loading) return <div style={{minHeight:'100vh',background:'#07090E',display:'flex',alignItems:'center',justifyContent:'center',color:'#5A6888',fontFamily:'DM Sans,sans-serif',fontSize:'13px'}}>Cargando KPIs...</div>
 
