@@ -153,6 +153,7 @@ export default function Onboarding() {
       score_total,
       estado: estado.nombre,
       ciclo: 1,
+      respuestas,
     })
 
     setResultado({score_total, scores, estado})

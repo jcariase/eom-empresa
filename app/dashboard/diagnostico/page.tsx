@@ -292,27 +292,32 @@ export default function DiagnosticoPage() {
                   <div style={{fontSize:'12px',color:'var(--text2)',marginBottom:'12px',fontFamily:"'DM Mono',monospace",textTransform:'uppercase',letterSpacing:'0.08em'}}>Respuestas del diagnóstico</div>
 
                   <div className="preguntas-list">
-                    {pregsDelDim.map((p,i) => {
-                      // Reconstruct answer from score (approximate)
-                      const dimPregs = PREGUNTAS.filter(q=>q.dim===dim)
-                      const dimScore = scores[dim] || 0
-                      const approxVal = Math.round((dimScore/100)*5)
-                      const respIdx = Math.min(4, Math.max(0, approxVal - 1))
+                    {pregsDelDim.map((p) => {
+                      const respuestasGuardadas = diagnostico?.respuestas as Record<number,number> | undefined
+                      const val = respuestasGuardadas?.[p.idx]
+                      const tieneRespuestaReal = val !== undefined && val !== null
+                      const respIdx = tieneRespuestaReal ? val - 1 : 2
 
                       return (
-                        <div key={i} className="pregunta-row">
+                        <div key={p.idx} className="pregunta-row">
                           <div className="pregunta-texto">{p.texto}</div>
                           <div className="pregunta-resp">
-                            <div className="resp-dots">
-                              {[1,2,3,4,5].map(n => (
-                                <div key={n} className="resp-dot" style={{
-                                  background: n <= approxVal
-                                    ? approxVal >= 4 ? '#16A34A' : approxVal >= 3 ? '#D97706' : '#EF4444'
-                                    : 'var(--border2)'
-                                }} />
-                              ))}
-                            </div>
-                            <span className="resp-val">{OPCIONES[respIdx]}</span>
+                            {tieneRespuestaReal ? (
+                              <>
+                                <div className="resp-dots">
+                                  {[1,2,3,4,5].map(n => (
+                                    <div key={n} className="resp-dot" style={{
+                                      background: n <= val
+                                        ? val >= 4 ? '#16A34A' : val >= 3 ? '#D97706' : '#EF4444'
+                                        : 'var(--border2)'
+                                    }} />
+                                  ))}
+                                </div>
+                                <span className="resp-val">{OPCIONES[respIdx]}</span>
+                              </>
+                            ) : (
+                              <span className="resp-val" style={{color:'var(--text2)'}}>Sin dato (ciclo anterior a esta versión)</span>
+                            )}
                           </div>
                         </div>
                       )
