@@ -44,6 +44,7 @@ type Accion = {
   id: string
   texto: string
   responsable: string
+  area: string
   fecha: string
   completada: boolean
   dim: string
@@ -64,6 +65,7 @@ export default function PlanPage() {
   const [empresa, setEmpresa] = useState<any>(null)
   const [diasRestantes, setDiasRestantes] = useState(90)
   const [editando, setEditando] = useState<string|null>(null)
+  const [areas, setAreas] = useState<string[]>([])
 
   useEffect(() => {
     async function load() {
@@ -73,6 +75,7 @@ export default function PlanPage() {
       const {data:emp} = await supabase.from('empresas_empresa').select('*').eq('user_id', user.id).single()
       if (!emp) { router.push('/onboarding'); return }
       setEmpresa(emp)
+      setAreas(emp.areas || [])
 
       const dias = emp.ciclo_inicio ? Math.max(0, 90 - Math.floor((Date.now() - new Date(emp.ciclo_inicio).getTime()) / (1000*60*60*24))) : 90
       setDiasRestantes(dias)
@@ -96,6 +99,7 @@ export default function PlanPage() {
               id: crypto.randomUUID(),
               texto: a,
               responsable: '',
+              area: '',
               fecha: '',
               completada: false,
               dim,
@@ -144,6 +148,7 @@ export default function PlanPage() {
       id: crypto.randomUUID(),
       texto: '',
       responsable: '',
+      area: '',
       fecha: '',
       completada: false,
       dim: focos.find(f=>f.id===focoId)?.dim || '',
@@ -293,6 +298,7 @@ export default function PlanPage() {
                         <div className="accion-content">
                           <div className={`accion-texto ${accion.completada?'done':''}`}>{accion.texto || 'Sin descripción'}</div>
                           <div className="accion-meta">
+                            {accion.area && <span className="accion-meta-item" style={{color:'#D97706'}}>{accion.area}</span>}
                             {accion.responsable && <span className="accion-meta-item">👤 {accion.responsable}</span>}
                             {accion.fecha && <span className="accion-meta-item">📅 {accion.fecha}</span>}
                             <button className="accion-edit-btn" onClick={()=>setEditando(editando===accion.id?null:accion.id)}>
@@ -310,12 +316,22 @@ export default function PlanPage() {
                             onChange={e=>updateAccion(foco.id, accion.id, 'texto', e.target.value)}
                           />
                           <div className="edit-row">
+                            <select
+                              className="edit-field"
+                              value={accion.area}
+                              onChange={e=>updateAccion(foco.id, accion.id, 'area', e.target.value)}
+                            >
+                              <option value="">Sin área asignada</option>
+                              {areas.map(a => <option key={a} value={a}>{a}</option>)}
+                            </select>
                             <input
                               className="edit-field"
                               placeholder="Responsable"
                               value={accion.responsable}
                               onChange={e=>updateAccion(foco.id, accion.id, 'responsable', e.target.value)}
                             />
+                          </div>
+                          <div className="edit-row">
                             <input
                               className="edit-field"
                               type="date"
