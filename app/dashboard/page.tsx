@@ -120,7 +120,7 @@ export default function Dashboard() {
           <div className="nav-item" onClick={()=>router.push('/dashboard/plan')}>Plan 90 días</div>
           <div className="nav-section">Gestión</div>
           <div className="nav-item" onClick={()=>router.push('/dashboard/kpis')}>KPIs</div>
-          <div className="nav-item" onClick={()=>router.push('/dashboard/areas')}>Áreas</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/configuracion')}>Configuración</div>
           <div className="nav-item" onClick={()=>router.push('/dashboard/reuniones')}>Reuniones</div>
           <div className="nav-item" onClick={()=>router.push('/dashboard/mejora')}>Mejora Continua</div>
           <div className="sidebar-bottom">

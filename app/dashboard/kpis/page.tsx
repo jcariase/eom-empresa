@@ -276,7 +276,7 @@ export default function KPIsPage() {
           <div className="nav-item" onClick={() => router.push('/dashboard/plan')}>Plan 90 días</div>
           <div className="nav-item active">KPIs</div>
           <div className="nav-section">Gestión</div>
-          <div className="nav-item">Áreas</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/configuracion')}>Configuración</div>
           <div className="nav-item">Reuniones</div>
           <div className="nav-item">Mejora Continua</div>
           <div className="sidebar-bottom">

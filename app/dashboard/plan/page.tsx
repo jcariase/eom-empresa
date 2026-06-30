@@ -236,7 +236,7 @@ export default function PlanPage() {
           <div className="nav-item active">Plan 90 días</div>
           <div className="nav-item" onClick={()=>router.push('/dashboard/kpis')}>KPIs</div>
           <div className="nav-section">Gestión</div>
-          <div className="nav-item">Áreas</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/configuracion')}>Configuración</div>
           <div className="nav-item">Reuniones</div>
           <div className="nav-item">Mejora Continua</div>
           <div className="sidebar-bottom">
