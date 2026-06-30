@@ -124,7 +124,7 @@ function DashboardContent() {
           <div className="nav-item" onClick={()=>router.push('/dashboard/kpis')}>KPIs</div>
           <div className="nav-item" onClick={()=>router.push('/dashboard/configuracion')}>Configuración</div>
           <div className="nav-item" onClick={()=>router.push('/dashboard/reuniones')}>Reuniones</div>
-          <div className="nav-item" style={{opacity:0.4,cursor:'not-allowed'}} title="Próximamente">Mejora Continua</div>
+          <div className="nav-item" onClick={()=>router.push('/dashboard/mejora')}>Mejora Continua</div>
           <div className="sidebar-bottom">
             <button className="btn-logout" onClick={async()=>{await supabase.auth.signOut();router.push('/auth')}}>Cerrar sesión</button>
           </div>
