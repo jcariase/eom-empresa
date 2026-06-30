@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 function AuthForm() {
   const router = useRouter()
   const params = useSearchParams()
-  const [mode, setMode] = useState<'login'|'register'>(params.get('mode')==='register'?'register':'login')
+  const [mode, setMode] = useState<'login'|'register'|'recover'>(params.get('mode')==='register'?'register':'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -22,6 +22,12 @@ function AuthForm() {
       const {error} = await supabase.auth.signUp({email, password})
       if (error) setError(error.message)
       else { setSuccess('Cuenta creada. Redirigiendo...'); setTimeout(()=>router.push('/onboarding'),1500) }
+    } else if (mode === 'recover') {
+      const {error} = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/nueva-clave` : undefined,
+      })
+      if (error) setError('No pudimos enviar el correo. Verifica el email e intenta de nuevo.')
+      else setSuccess('Te enviamos un link a tu correo para crear una nueva contraseña. Revisa también spam.')
     } else {
       const {error} = await supabase.auth.signInWithPassword({email, password})
       if (error) setError('Email o contraseña incorrectos')
@@ -33,17 +39,33 @@ function AuthForm() {
   return (
     <div className="card">
       <div className="wordmark"><div className="mark">E</div>EOM OS Empresa</div>
-      <div className="title">{mode==='register'?'Crear cuenta':'Ingresar'}</div>
+      <div className="title">{mode==='register'?'Crear cuenta':mode==='recover'?'Recuperar contraseña':'Ingresar'}</div>
+      {mode === 'recover' && !success && (
+        <p className="recover-help">Ingresa tu email y te enviaremos un link para crear una nueva contraseña.</p>
+      )}
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
-      <form onSubmit={handleSubmit}>
-        <input className="field" type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} required />
-        <input className="field" type="password" placeholder="Contraseña" value={password} onChange={e=>setPassword(e.target.value)} required />
-        <button className="btn" type="submit" disabled={loading}>{loading?'...':(mode==='register'?'Crear cuenta →':'Ingresar →')}</button>
-      </form>
+      {!(mode === 'recover' && success) && (
+        <form onSubmit={handleSubmit}>
+          <input className="field" type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} required />
+          {mode !== 'recover' && (
+            <input className="field" type="password" placeholder="Contraseña" value={password} onChange={e=>setPassword(e.target.value)} required />
+          )}
+          <button className="btn" type="submit" disabled={loading}>
+            {loading?'...':mode==='register'?'Crear cuenta →':mode==='recover'?'Enviar link de recuperación →':'Ingresar →'}
+          </button>
+        </form>
+      )}
       <div className="switch">
-        {mode==='register'?<>¿Ya tienes cuenta? <a onClick={()=>setMode('login')}>Ingresar</a></>:<>¿No tienes cuenta? <a onClick={()=>setMode('register')}>Registrarse</a></>}
+        {mode==='register' && <>¿Ya tienes cuenta? <a onClick={()=>{setMode('login');setError('');setSuccess('')}}>Ingresar</a></>}
+        {mode==='login' && <>¿No tienes cuenta? <a onClick={()=>{setMode('register');setError('');setSuccess('')}}>Registrarse</a></>}
+        {mode==='recover' && <>¿Recordaste tu contraseña? <a onClick={()=>{setMode('login');setError('');setSuccess('')}}>Ingresar</a></>}
       </div>
+      {mode === 'login' && (
+        <div className="forgot">
+          <a onClick={()=>{setMode('recover');setError('');setSuccess('')}}>¿Olvidaste tu contraseña?</a>
+        </div>
+      )}
     </div>
   )
 }
@@ -66,10 +88,14 @@ export default function Auth() {
         .btn:hover{background:#B45309}
         .btn:disabled{opacity:0.5;cursor:not-allowed}
         .error{font-size:13px;color:#EF4444;margin-bottom:12px}
-        .success{font-size:13px;color:#4ADE80;margin-bottom:12px}
+        .success{font-size:13px;color:#4ADE80;margin-bottom:12px;line-height:1.5}
+        .recover-help{font-size:13px;color:#8A9AB8;margin-bottom:20px;line-height:1.5}
         .switch{font-size:13px;color:#5A6888;margin-top:20px;text-align:center}
         .switch a{color:#D97706;cursor:pointer}
         .switch a:hover{color:#FCD34D}
+        .forgot{font-size:12px;color:#5A6888;margin-top:10px;text-align:center}
+        .forgot a{color:#5A6888;cursor:pointer;text-decoration:underline}
+        .forgot a:hover{color:#8A9AB8}
       `}</style>
       <Suspense fallback={<div style={{color:'#5A6888',fontFamily:'DM Sans,sans-serif',fontSize:'13px'}}>Cargando...</div>}>
         <AuthForm />
