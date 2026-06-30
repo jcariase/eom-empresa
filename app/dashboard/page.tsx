@@ -1,8 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 function getEstado(score: number) {
@@ -14,8 +14,10 @@ function getEstado(score: number) {
 
 function fmt(n: number) { return n.toLocaleString('es-CL') }
 
-export default function Dashboard() {
+function DashboardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const forzarCicloCumplido = searchParams.get('test_ciclo_cumplido') === 'true'
   const [empresa, setEmpresa] = useState<any>(null)
   const [diagnostico, setDiagnostico] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -141,6 +143,38 @@ export default function Dashboard() {
             const restantes = Math.max(0, 90-transcurridos)
             const pctCiclo = Math.round((transcurridos/90)*100)
             const fmtDate = (d: Date) => d.toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'})
+            const cicloCumplido = restantes === 0 || forzarCicloCumplido
+            const scoreActual = diagnostico?.score_total || 0
+            const fueExcelencia = scoreActual > 75
+
+            if (cicloCumplido) {
+              return (
+                <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderLeft:'2px solid #16A34A',padding:'28px',marginBottom:'24px'}}>
+                  <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:20}}>
+                    <div style={{flex:1,minWidth:280}}>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:'10px',letterSpacing:'0.1em',textTransform:'uppercase',color:'#16A34A',marginBottom:10}}>Ciclo 1 completado</div>
+                      <div style={{fontFamily:"'Playfair Display',serif",fontSize:'22px',color:'var(--text)',marginBottom:10,fontWeight:400}}>
+                        {fueExcelencia
+                          ? 'Llegaste a Excelencia Autónoma. Ese no es el destino.'
+                          : 'Tu primer ciclo de 90 días terminó.'}
+                      </div>
+                      <div style={{fontSize:'14px',color:'var(--text3)',lineHeight:1.7,marginBottom:4}}>
+                        {fueExcelencia
+                          ? 'Lo bueno es el enemigo de lo excelente. El estándar que alcanzaste hoy se convierte en el piso del ciclo siguiente. Es momento de medir de nuevo y subir la vara.'
+                          : 'Es momento de medir tu progreso real. Haz un nuevo diagnóstico para ver qué cambió desde el inicio y definir el foco del próximo ciclo.'}
+                      </div>
+                    </div>
+                    <button
+                      style={{padding:'14px 28px',border:'none',background:'#16A34A',color:'#fff',fontFamily:"'DM Sans',sans-serif",fontSize:'14px',fontWeight:500,cursor:'pointer',flexShrink:0}}
+                      onClick={()=>router.push('/dashboard/diagnostico?nuevo=true')}
+                    >
+                      Iniciar ciclo 2 — Nuevo diagnóstico →
+                    </button>
+                  </div>
+                </div>
+              )
+            }
+
             return (
               <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderLeft:'2px solid var(--amber)',padding:'24px 28px',marginBottom:'24px'}}>
                 <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:16}}>
@@ -222,5 +256,13 @@ export default function Dashboard() {
         </main>
       </div>
     </>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#07090E'}} />}>
+      <DashboardContent />
+    </Suspense>
   )
 }
