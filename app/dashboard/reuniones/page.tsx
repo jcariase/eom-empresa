@@ -99,7 +99,14 @@ export default function ReunionesPage() {
     } : r)
     setReuniones(nuevas)
     const reunion = nuevas.find(r => r.id === reunionId)
-    if (reunion) await supabase.from('reuniones_empresa').update({acuerdos: reunion.acuerdos}).eq('id', reunionId)
+    if (!reunion) return
+    await supabase.from('reuniones_empresa').update({acuerdos: reunion.acuerdos}).eq('id', reunionId)
+
+    const acuerdoActualizado = reunion.acuerdos.find(a => a.id === acuerdoId)
+    if (acuerdoActualizado) {
+      // Sincronizar con el problema vinculado en Mejora Continua, si existe
+      await supabase.from('problemas_empresa').update({resuelto: acuerdoActualizado.completado}).eq('acuerdo_id', acuerdoId)
+    }
   }
 
   async function guardarComentario(reunionId: string, acuerdoId: string, comentario: string) {

@@ -15,6 +15,8 @@ type Problema = {
   responsable: string
   fecha_compromiso: string
   resuelto: boolean
+  acuerdo_id?: string
+  reunion_id?: string
   created_at?: string
 }
 
@@ -80,6 +82,49 @@ export default function MejoraContinuaPage() {
     const {data: {user}} = await supabase.auth.getUser()
     if (!user) return
     setSaving(true)
+
+    const acuerdoId = crypto.randomUUID()
+    let reunionId: string | undefined
+
+    // Si hay acción preventiva, vincularla como acuerdo en una reunión de seguimiento
+    if (fQueHacer.trim()) {
+      const tituloSeguimiento = `Seguimiento de problemas — ${fArea}`
+      const {data: reunionExistente} = await supabase
+        .from('reuniones_empresa')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('area', fArea)
+        .eq('titulo', tituloSeguimiento)
+        .order('created_at', {ascending: false})
+        .limit(1)
+        .single()
+
+      const nuevoAcuerdo = {
+        id: acuerdoId,
+        que: fQueHacer,
+        quien: fResponsable,
+        cuando: fFechaCompromiso,
+        completado: false,
+        comentario: `Originado por: "${fQuePaso}"`,
+      }
+
+      if (reunionExistente) {
+        reunionId = reunionExistente.id
+        const acuerdosActualizados = [...(reunionExistente.acuerdos || []), nuevoAcuerdo]
+        await supabase.from('reuniones_empresa').update({acuerdos: acuerdosActualizados}).eq('id', reunionExistente.id)
+      } else {
+        reunionId = crypto.randomUUID()
+        await supabase.from('reuniones_empresa').insert({
+          id: reunionId,
+          user_id: user.id,
+          titulo: tituloSeguimiento,
+          area: fArea,
+          fecha: fFecha,
+          acuerdos: [nuevoAcuerdo],
+        })
+      }
+    }
+
     const nuevo: Problema = {
       id: crypto.randomUUID(),
       area: fArea,
@@ -90,6 +135,8 @@ export default function MejoraContinuaPage() {
       responsable: fResponsable,
       fecha_compromiso: fFechaCompromiso,
       resuelto: false,
+      acuerdo_id: fQueHacer.trim() ? acuerdoId : undefined,
+      reunion_id: reunionId,
     }
     const {error} = await supabase.from('problemas_empresa').insert({...nuevo, user_id: user.id})
     if (error) { console.error(error); setSaving(false); return }
@@ -102,10 +149,23 @@ export default function MejoraContinuaPage() {
   }
 
   async function toggleResuelto(id: string) {
-    const nuevos = problemas.map(p => p.id === id ? {...p, resuelto: !p.resuelto} : p)
+    const problema = problemas.find(p => p.id === id)
+    if (!problema) return
+    const nuevoEstado = !problema.resuelto
+    const nuevos = problemas.map(p => p.id === id ? {...p, resuelto: nuevoEstado} : p)
     setProblemas(nuevos)
-    const prob = nuevos.find(p => p.id === id)
-    if (prob) await supabase.from('problemas_empresa').update({resuelto: prob.resuelto}).eq('id', id)
+    await supabase.from('problemas_empresa').update({resuelto: nuevoEstado}).eq('id', id)
+
+    // Sincronizar con el acuerdo vinculado en Reuniones
+    if (problema.acuerdo_id && problema.reunion_id) {
+      const {data: reunion} = await supabase.from('reuniones_empresa').select('*').eq('id', problema.reunion_id).single()
+      if (reunion) {
+        const acuerdosActualizados = (reunion.acuerdos || []).map((a: any) =>
+          a.id === problema.acuerdo_id ? {...a, completado: nuevoEstado} : a
+        )
+        await supabase.from('reuniones_empresa').update({acuerdos: acuerdosActualizados}).eq('id', problema.reunion_id)
+      }
+    }
   }
 
   async function eliminarProblema(id: string) {
@@ -305,6 +365,11 @@ export default function MejoraContinuaPage() {
                     <div className="q-block evitar">
                       <div className="q-label">¿Qué hacer para que no vuelva a pasar?</div>
                       <div className={`q-text ${!p.que_hacer_para_evitar ? 'empty' : ''}`}>{p.que_hacer_para_evitar || 'Sin definir — esto es lo más importante'}</div>
+                      {p.acuerdo_id && (
+                        <div style={{fontSize:11, color:'var(--amber)', marginTop:8, display:'flex', alignItems:'center', gap:4, cursor:'pointer'}} onClick={() => router.push('/dashboard/reuniones')}>
+                          🔗 En seguimiento en Reuniones — {p.area}
+                        </div>
+                      )}
                     </div>
                   </div>
 
