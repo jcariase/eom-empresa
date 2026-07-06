@@ -82,6 +82,16 @@ export default function Home() {
 
       <div className="rule" />
 
+      <section className="pasos" style={{paddingBottom:'40px'}}>
+        <p className="section-sub" style={{maxWidth:'640px',margin:'0 auto',fontSize:'1.1rem'}}>
+          EOM Empresa es el sistema operativo para empresas de 20 a 200 personas. No reemplaza tu ERP:
+          toma los números que ya tienes y los convierte en diagnóstico, plan de 90 días y disciplina de
+          seguimiento, para que tu organización deje de depender de que tú estés encima de todo.
+        </p>
+      </section>
+
+      <div className="rule" />
+
       <section className="manifesto">
         <div className="manifesto-kicker">El principio fundacional de EOM</div>
         <blockquote className="manifesto-quote">
