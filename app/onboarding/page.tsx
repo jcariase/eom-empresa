@@ -15,10 +15,10 @@ const AREAS_SUGERIDAS: Record<string, string[]> = {
 }
 
 const PREGUNTAS = [
-  {dim:'Finanzas',texto:'¿Conoces tu utilidad neta del mes anterior antes del día 10?',impacto:'Sin esto, tomas decisiones de gasto a ciegas.'},
-  {dim:'Finanzas',texto:'¿Tienes proyección de flujo de caja para los próximos 30 días?',impacto:'El 60% de las pymes que quiebran son rentables pero sin caja.'},
+  {dim:'Finanzas',texto:'¿Conoces tu utilidad neta del mes anterior antes del día 10?',impacto:'Sin esto, tomas decisiones de gasto a ciegas.',glosario:'Utilidad neta: lo que te queda después de pagar todo, no lo que facturaste.'},
+  {dim:'Finanzas',texto:'¿Tienes proyección de flujo de caja para los próximos 30 días?',impacto:'El 60% de las pymes que quiebran son rentables pero sin caja.',glosario:'Flujo de caja proyectado: cuánta plata vas a tener en el banco los próximos 30 días, no cuánta tienes hoy.'},
   {dim:'Finanzas',texto:'¿Tu cobranza tiene proceso definido con fechas y responsable?',impacto:'Un proceso reduce días de cobro en 30–40%.'},
-  {dim:'Finanzas',texto:'¿Tus gastos fijos están documentados y los revisas mensualmente?',impacto:'Empresas que revisan gastos fijos ahorran en promedio 8–12% anual.'},
+  {dim:'Finanzas',texto:'¿Tus gastos fijos están documentados y los revisas mensualmente?',impacto:'Empresas que revisan gastos fijos ahorran en promedio 8–12% anual.',glosario:'Gastos fijos documentados: una lista escrita, no en tu cabeza, de lo que pagas sí o sí cada mes.'},
   {dim:'Finanzas',texto:'¿Tienes metas financieras escritas con número y fecha?',impacto:'Metas escritas aumentan la probabilidad de logro en 42%.'},
   {dim:'Operaciones',texto:'¿Las reuniones de tu equipo terminan con acuerdos escritos y dueño?',impacto:'Sin acuerdos escritos, el 70% de lo decidido no se ejecuta.'},
   {dim:'Operaciones',texto:'¿Tienes indicadores operacionales que revisas cada semana?',impacto:'KPIs semanales permiten corregir desviaciones 4x más rápido.'},
@@ -244,6 +244,7 @@ export default function Onboarding() {
         .diag-pregunta{background:var(--bg2);border:1px solid var(--border);padding:20px;margin-bottom:10px}
         .preg-texto{font-size:14px;color:var(--text);margin-bottom:6px;line-height:1.55}
         .preg-impacto{font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5}
+        .preg-glosario{font-size:12px;color:var(--amber,#D97706);margin-bottom:8px;line-height:1.5;font-style:italic}
         .preg-opciones{display:flex;gap:8px}
         .preg-opt{flex:1;padding:8px 4px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s;text-align:center;border-radius:0}
         .preg-opt:hover{border-color:var(--amber-border);color:var(--amber-light)}
@@ -457,6 +458,7 @@ export default function Onboarding() {
                 {PREGUNTAS.map((p,i) => p.dim===dim && (
                   <div key={i} className="diag-pregunta">
                     <div className="preg-texto">{p.texto}</div>
+                    {p.glosario && <div className="preg-glosario">💡 {p.glosario}</div>}
                     <div className="preg-impacto">↗ {p.impacto}</div>
                     <div className="preg-opciones">
                       {[{v:1,l:'Nunca'},{v:2,l:'Rara vez'},{v:3,l:'A veces'},{v:4,l:'Casi siempre'},{v:5,l:'Siempre'}].map(opt=>(
