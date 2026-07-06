@@ -62,7 +62,12 @@ type Foco = {
   acciones: Accion[]
 }
 
-function getEstadoReal(a: Accion): EstadoAccion {
+function getEstadoReal(a: Accion, reuniones: any[] = []): EstadoAccion {
+  if (a.acuerdoVinculado) {
+    const reunion = reuniones.find(r => r.id === a.acuerdoVinculado!.reunionId)
+    const acuerdo = reunion?.acuerdos?.find((x: any) => x.id === a.acuerdoVinculado!.acuerdoId)
+    return acuerdo?.completado ? 'completada' : 'pendiente'
+  }
   if (a.estado) return a.estado
   return a.completada ? 'completada' : 'pendiente'
 }
@@ -345,7 +350,7 @@ export default function PlanPage() {
                 const labels: Record<EstadoAccion,string> = {pendiente:'Por hacer', en_proceso:'En proceso', completada:'Completado'}
                 const colColors: Record<EstadoAccion,string> = {pendiente:'#5A6888', en_proceso:'#D97706', completada:'#16A34A'}
                 const todasLasAcciones = focos.flatMap(f => f.acciones.map(a => ({...a, focoId: f.id, focoNombre: f.foco, focoDim: f.dim})))
-                const accionesCol = todasLasAcciones.filter(a => getEstadoReal(a) === estadoCol)
+                const accionesCol = todasLasAcciones.filter(a => getEstadoReal(a, reuniones) === estadoCol)
                 return (
                   <div key={estadoCol} style={{background:'var(--surf-2)',border:'1px solid var(--brd)'}}>
                     <div style={{padding:'14px 16px',borderBottom:'1px solid var(--brd)',borderTop:`2px solid ${colColors[estadoCol]}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
@@ -368,6 +373,9 @@ export default function PlanPage() {
                                 {a.fecha && <span>📅 {a.fecha}</span>}
                               </div>
                             )}
+                            {a.acuerdoVinculado ? (
+                              <div style={{fontSize:10,color:'#D97706',padding:'4px 0'}}>🔗 Seguida en Reuniones</div>
+                            ) : (
                             <div style={{display:'flex',gap:6}}>
                               {(['pendiente','en_proceso','completada'] as EstadoAccion[]).filter(e => e !== estadoCol).map(destino => (
                                 <button
@@ -379,6 +387,7 @@ export default function PlanPage() {
                                 </button>
                               ))}
                             </div>
+                            )}
                           </div>
                         )
                       })}
