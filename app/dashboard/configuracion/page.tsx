@@ -30,6 +30,8 @@ export default function ConfiguracionPage() {
   const [clientes, setClientes] = useState('')
   const [areas, setAreas] = useState<string[]>([])
   const [areaInput, setAreaInput] = useState('')
+  const [suscripcion, setSuscripcion] = useState<{ activo: boolean; plan_nombre: string; plan_vence: string | null }>({ activo: false, plan_nombre: 'Trial', plan_vence: null })
+  const [pagando, setPagando] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -46,10 +48,36 @@ export default function ConfiguracionPage() {
       setRetiro(emp.retiro_dueno_mensual ? emp.retiro_dueno_mensual.toLocaleString('es-CL') : '')
       setClientes(String(emp.clientes_activos || ''))
       setAreas(emp.areas || [])
+      setSuscripcion({
+        activo: !!emp.plan_activo,
+        plan_nombre: emp.plan_nombre || 'Trial',
+        plan_vence: emp.plan_vence || null,
+      })
       setLoading(false)
     }
     load()
   }, [router])
+
+  async function suscribirse() {
+    setPagando(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    try {
+      const res = await fetch('/api/flow/crear', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        setPagando(false)
+        alert(data.error || 'No se pudo iniciar el pago')
+      }
+    } catch {
+      setPagando(false)
+      alert('Error de conexión con Flow')
+    }
+  }
 
   async function guardarDatosEmpresa() {
     const {data: {user}} = await supabase.auth.getUser()
@@ -164,6 +192,30 @@ export default function ConfiguracionPage() {
           <div className="page-sub">Datos de tu empresa, números base y áreas</div>
 
           {savedMsg && <div className="saved-toast">{savedMsg}</div>}
+
+          {/* Suscripción */}
+          <div className="section">
+            <div className="section-title">Suscripción</div>
+            {suscripcion.activo ? (
+              <div>
+                <div style={{ color: '#16A34A', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>✓ {suscripcion.plan_nombre} — activo</div>
+                {suscripcion.plan_vence && (
+                  <div className="section-sub">Vigente hasta {new Date(suscripcion.plan_vence).toLocaleDateString('es-CL')}</div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="section-sub" style={{ marginBottom: 12 }}>Suscripción mensual EOM OS Empresa: $390.000/mes.</div>
+                <button
+                  onClick={suscribirse}
+                  disabled={pagando}
+                  style={{ padding: '10px 20px', border: 'none', background: '#D97706', color: '#fff', fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+                >
+                  {pagando ? 'Redirigiendo a Flow...' : 'Suscribirse ahora →'}
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Datos de la empresa */}
           <div className="section">
