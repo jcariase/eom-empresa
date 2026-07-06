@@ -7,10 +7,10 @@ import { supabase } from '@/lib/supabase'
 import Sidebar from '../../components/Sidebar'
 
 const PREGUNTAS = [
-  {dim:'Finanzas',texto:'¿Conoces tu utilidad neta del mes anterior antes del día 10?'},
-  {dim:'Finanzas',texto:'¿Tienes proyección de flujo de caja para los próximos 30 días?'},
+  {dim:'Finanzas',texto:'¿Conoces tu utilidad neta del mes anterior antes del día 10?',glosario:'Utilidad neta: lo que te queda después de pagar todo, no lo que facturaste.'},
+  {dim:'Finanzas',texto:'¿Tienes proyección de flujo de caja para los próximos 30 días?',glosario:'Flujo de caja proyectado: cuánta plata vas a tener en el banco los próximos 30 días, no cuánta tienes hoy.'},
   {dim:'Finanzas',texto:'¿Tu cobranza tiene proceso definido con fechas y responsable?'},
-  {dim:'Finanzas',texto:'¿Tus gastos fijos están documentados y los revisas mensualmente?'},
+  {dim:'Finanzas',texto:'¿Tus gastos fijos están documentados y los revisas mensualmente?',glosario:'Gastos fijos documentados: una lista escrita, no en tu cabeza, de lo que pagas sí o sí cada mes.'},
   {dim:'Finanzas',texto:'¿Tienes metas financieras escritas con número y fecha?'},
   {dim:'Operaciones',texto:'¿Las reuniones de tu equipo terminan con acuerdos escritos y dueño?'},
   {dim:'Operaciones',texto:'¿Tienes indicadores operacionales que revisas cada semana?'},
@@ -287,6 +287,11 @@ export default function DiagnosticoPage() {
                       return (
                         <div key={p.idx} className="pregunta-row">
                           <div className="pregunta-texto">{p.texto}</div>
+                          {p.glosario && (
+                            <div style={{fontSize:'12px',color:'var(--amber,#D97706)',fontStyle:'italic',marginTop:'4px',marginBottom:'4px',lineHeight:1.5}}>
+                              💡 {p.glosario}
+                            </div>
+                          )}
                           <div className="pregunta-resp">
                             {tieneRespuestaReal ? (
                               <>
