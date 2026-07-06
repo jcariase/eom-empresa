@@ -2,16 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { obtenerEstado } from '@/lib/flow'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function POST(req: NextRequest) {
   const form = await req.formData()
   const token = form.get('token') as string
   if (!token) return NextResponse.json({ error: 'Falta token' }, { status: 400 })
 
+  const supabaseAdmin = getSupabaseAdmin()
   try {
     const estado = await obtenerEstado(token)
     if (estado.status === 2) {
