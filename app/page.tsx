@@ -82,8 +82,23 @@ export default function Home() {
 
       <div className="rule" />
 
-      <section className="cta" style={{padding:'60px 24px'}}>
-        <h2 className="cta-title" style={{fontSize:'2rem'}}>Lo bueno es el enemigo<br />de <em>lo excelente.</em></h2>
+      <section className="manifesto">
+        <div className="manifesto-kicker">El principio fundacional de EOM</div>
+        <blockquote className="manifesto-quote">
+          Lo bueno es el enemigo de lo excelente.
+        </blockquote>
+        <div className="manifesto-rule" />
+        <p className="manifesto-body">
+          Toyota lo aprendió de Taiichi Ohno: <strong>el momento en que una empresa cree que llegó,
+          empieza a retroceder.</strong> Sus competidores no descansan. El mercado no espera.
+          La complacencia con lo que funciona hoy es el riesgo más silencioso de cualquier organización.
+        </p>
+        <p className="manifesto-body">
+          EOM OS no es una herramienta para llegar a un destino. Es el sistema que institucionaliza
+          la incomodidad productiva: <strong>cada ciclo de 90 días, tu estándar de ayer se convierte
+          en tu piso de hoy.</strong>
+        </p>
+        <div className="manifesto-attribution">Excelencia Operacional Modular · Trilogía QVC</div>
       </section>
 
       <div className="rule" />
@@ -120,7 +135,7 @@ export default function Home() {
       <div className="rule" />
 
       <section className="cta">
-        <h2 className="cta-title">Tu organización, <em>sin excusas.</em></h2>
+        <h2 className="cta-title">Sal del <em>modo bombero.</em></h2>
         <p className="hero-sub" style={{margin:'0 auto 44px',textAlign:'center'}}>Empieza tu primer diagnóstico hoy. En 20 minutos tienes el mapa completo de tu organización.</p>
         <button className="btn-main" onClick={() => router.push('/auth?mode=register')}>Comenzar diagnóstico →</button>
         <p className="hero-note" style={{marginTop:'16px'}}>Sin tarjeta de crédito · Sin compromiso</p>

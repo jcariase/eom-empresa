@@ -43,3 +43,43 @@ body {
   color: var(--txt-1);
   transition: background 0.2s ease, color 0.2s ease;
 }
+
+.manifesto {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 80px 24px;
+  text-align: center;
+}
+.manifesto-kicker {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 24px;
+}
+.manifesto-quote {
+  font-family: var(--font-serif, inherit);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.25;
+  margin: 0 0 32px;
+  color: var(--txt-1);
+}
+.manifesto-rule {
+  width: 48px;
+  height: 2px;
+  background: var(--amber);
+  margin: 0 auto 32px;
+}
+.manifesto-body {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--txt-2);
+  margin-bottom: 20px;
+  text-align: left;
+}
+.manifesto-attribution {
+  font-size: 0.85rem;
+  color: var(--txt-3, var(--txt-2));
+  letter-spacing: 0.03em;
+  margin-top: 24px;
+}
