@@ -80,7 +80,7 @@ export default function AdminPage() {
     }))
     setEmpresas(enriquecidas)
 
-    const { data: pymeData } = await supabase.from('empresas').select('*').order('created_at', { ascending: false })
+    const { data: pymeData } = await supabase.from('empresas_pyme').select('*').order('created_at', { ascending: false })
     setPymes((pymeData || []) as EmpresaPyme[])
 
     setLoading(false)
