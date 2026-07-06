@@ -99,9 +99,8 @@ export default function Home() {
         </blockquote>
         <div className="manifesto-rule" />
         <p className="manifesto-body">
-          Toyota lo aprendió de Taiichi Ohno: <strong>el momento en que una empresa cree que llegó,
-          empieza a retroceder.</strong> Sus competidores no descansan. El mercado no espera.
-          La complacencia con lo que funciona hoy es el riesgo más silencioso de cualquier organización.
+          Toyota lo aprendió con Taiichi Ohno: <strong>la complacencia con lo que funciona bien hoy
+          es el riesgo más silencioso de cualquier organización.</strong>
         </p>
         <p className="manifesto-body">
           EOM OS no es una herramienta para llegar a un destino. Es el sistema que institucionaliza
