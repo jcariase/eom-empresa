@@ -71,13 +71,19 @@ export default function Home() {
 
       <section className="hero">
         <div className="eyebrow">Sistema Operativo para Empresas</div>
-        <h1 className="hero-title">Tu empresa debería funcionar<br /><em>con o sin ti.</em></h1>
-        <p className="hero-sub">EOM OS Empresa instala el sistema operativo que tu organización necesita para crecer sin depender de una sola persona. En ciclos de 90 días.</p>
+        <h1 className="hero-title">Tu ERP te dice qué pasó.<br /><em>EOM te dice qué hacer con eso.</em></h1>
+        <p className="hero-sub">Diagnóstico, plan de 90 días y disciplina de seguimiento semanal. En 90 días, tu organización sube de estado.</p>
         <div className="hero-actions">
           <button className="btn-main" onClick={() => router.push('/auth?mode=register')}>Comenzar diagnóstico →</button>
           <button className="btn-sec" onClick={() => router.push('/auth')}>Ya tengo cuenta</button>
         </div>
         <p className="hero-note">Sin tarjeta de crédito · 20 minutos para ver tu diagnóstico</p>
+      </section>
+
+      <div className="rule" />
+
+      <section className="cta" style={{padding:'60px 24px'}}>
+        <h2 className="cta-title" style={{fontSize:'2rem'}}>Lo bueno es el enemigo<br />de <em>lo excelente.</em></h2>
       </section>
 
       <div className="rule" />
@@ -114,7 +120,7 @@ export default function Home() {
       <div className="rule" />
 
       <section className="cta">
-        <h2 className="cta-title">Lo bueno es el enemigo<br />de <em>lo excelente.</em></h2>
+        <h2 className="cta-title">Tu organización, <em>sin excusas.</em></h2>
         <p className="hero-sub" style={{margin:'0 auto 44px',textAlign:'center'}}>Empieza tu primer diagnóstico hoy. En 20 minutos tienes el mapa completo de tu organización.</p>
         <button className="btn-main" onClick={() => router.push('/auth?mode=register')}>Comenzar diagnóstico →</button>
         <p className="hero-note" style={{marginTop:'16px'}}>Sin tarjeta de crédito · Sin compromiso</p>
