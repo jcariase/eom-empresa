@@ -23,6 +23,17 @@ type Empresa = {
   ultimoDiagnostico?: { score_total: number; estado: string; created_at: string }
 }
 
+type EmpresaPyme = {
+  id: string
+  user_id: string
+  nombre: string
+  plan: string
+  trial_activo: boolean
+  trial_ends_at: string | null
+  activo: boolean
+  created_at: string
+}
+
 function getEstadoColor(score: number) {
   if (score <= 35) return '#EF4444'
   if (score <= 55) return '#D97706'
@@ -37,7 +48,10 @@ function fmtDate(d: string) {
 export default function AdminPage() {
   const router = useRouter()
   const [autorizado, setAutorizado] = useState<boolean | null>(null)
+  const [vista, setVista] = useState<'empresa' | 'pyme'>('empresa')
   const [empresas, setEmpresas] = useState<Empresa[]>([])
+  const [pymes, setPymes] = useState<EmpresaPyme[]>([])
+  const [filtroPyme, setFiltroPyme] = useState('')
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState('')
   const [editando, setEditando] = useState<string | null>(null)
@@ -65,6 +79,10 @@ export default function AdminPage() {
         : undefined
     }))
     setEmpresas(enriquecidas)
+
+    const { data: pymeData } = await supabase.from('empresas').select('*').order('created_at', { ascending: false })
+    setPymes((pymeData || []) as EmpresaPyme[])
+
     setLoading(false)
   }
 
@@ -96,6 +114,24 @@ export default function AdminPage() {
     total: empresas.length,
     conDiag: empresas.filter(e => e.ultimoDiagnostico).length,
     activos: empresas.filter(e => e.plan_activo).length,
+  }
+
+  const pymesFiltradas = pymes.filter(p => (p.nombre || '').toLowerCase().includes(filtroPyme.toLowerCase()))
+
+  function estadoPyme(p: EmpresaPyme): { label: string; color: string } {
+    if (p.activo) return { label: 'Pagando', color: '#16A34A' }
+    if (p.trial_activo && p.trial_ends_at) {
+      const vencido = new Date(p.trial_ends_at).getTime() < Date.now()
+      return vencido ? { label: 'Trial vencido', color: '#EF4444' } : { label: 'En trial', color: '#D97706' }
+    }
+    return { label: 'Dado de baja', color: '#5A6888' }
+  }
+
+  const statsPyme = {
+    total: pymes.length,
+    enTrial: pymes.filter(p => p.trial_activo && !p.activo && new Date(p.trial_ends_at || 0).getTime() >= Date.now()).length,
+    pagando: pymes.filter(p => p.activo).length,
+    bajaOVencido: pymes.filter(p => !p.activo && (!p.trial_activo || new Date(p.trial_ends_at || 0).getTime() < Date.now())).length,
   }
 
   if (autorizado === null) return <div style={{ minHeight: '100vh', background: '#07090E', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5A6888', fontFamily: 'DM Sans,sans-serif', fontSize: 13 }}>Verificando...</div>
@@ -150,12 +186,25 @@ export default function AdminPage() {
       <div className="shell">
         <div className="header">
           <div>
-            <div className="title">Panel de prospectos</div>
-            <div className="sub">Empresas registradas en EOM OS Empresa</div>
+            <div className="title">Panel de negocio</div>
+            <div className="sub">EOM Empresa + EOM Pyme · gestión de usuarios</div>
           </div>
           <button className="btn-back" onClick={() => router.push('/dashboard')}>← Dashboard</button>
         </div>
 
+        <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.12)', marginBottom: 24, width: 'fit-content' }}>
+          <button
+            onClick={() => setVista('empresa')}
+            style={{ padding: '9px 20px', border: 'none', background: vista === 'empresa' ? 'rgba(217,119,6,0.12)' : 'transparent', color: vista === 'empresa' ? '#D97706' : '#8A9AB8', fontFamily: "'DM Sans',sans-serif", fontSize: 13, cursor: 'pointer', borderRight: '1px solid rgba(255,255,255,0.12)' }}
+          >EOM Empresa</button>
+          <button
+            onClick={() => setVista('pyme')}
+            style={{ padding: '9px 20px', border: 'none', background: vista === 'pyme' ? 'rgba(217,119,6,0.12)' : 'transparent', color: vista === 'pyme' ? '#D97706' : '#8A9AB8', fontFamily: "'DM Sans',sans-serif", fontSize: 13, cursor: 'pointer' }}
+          >EOM Pyme</button>
+        </div>
+
+        {vista === 'empresa' ? (
+        <>
         <div className="stats">
           <div className="stat"><div className="stat-label">Registradas</div><div className="stat-val">{stats.total}</div></div>
           <div className="stat"><div className="stat-label">Con diagnóstico</div><div className="stat-val" style={{ color: '#D97706' }}>{stats.conDiag}</div></div>
@@ -217,6 +266,46 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        )}
+        </>
+        ) : (
+        <>
+        <div className="stats" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+          <div className="stat"><div className="stat-label">Registradas</div><div className="stat-val">{statsPyme.total}</div></div>
+          <div className="stat"><div className="stat-label">En trial</div><div className="stat-val" style={{ color: '#D97706' }}>{statsPyme.enTrial}</div></div>
+          <div className="stat"><div className="stat-label">Pagando</div><div className="stat-val" style={{ color: '#16A34A' }}>{statsPyme.pagando}</div></div>
+          <div className="stat"><div className="stat-label">Baja / vencido</div><div className="stat-val" style={{ color: '#EF4444' }}>{statsPyme.bajaOVencido}</div></div>
+        </div>
+
+        <input className="search" placeholder="Buscar por nombre..." value={filtroPyme} onChange={e => setFiltroPyme(e.target.value)} />
+
+        {loading ? <div className="empty">Cargando...</div> : pymesFiltradas.length === 0 ? <div className="empty">Sin empresas registradas aún.</div> : (
+          <div className="table">
+            <div className="thead" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
+              <div>Empresa</div>
+              <div>Plan</div>
+              <div>Estado</div>
+              <div>Fecha ingreso</div>
+            </div>
+            {pymesFiltradas.map(p => {
+              const est = estadoPyme(p)
+              return (
+                <div key={p.id} className="trow" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
+                  <div className="empresa-nombre">{p.nombre || 'Sin nombre'}</div>
+                  <div style={{ fontSize: 13, color: '#8A9AB8' }}>{p.plan || '—'}</div>
+                  <div>
+                    <span className="badge" style={{ color: est.color, borderColor: est.color + '44' }}>{est.label}</span>
+                    {p.trial_activo && p.trial_ends_at && !p.activo && (
+                      <div style={{ fontSize: 11, color: '#5A6888', marginTop: 4 }}>vence {fmtDate(p.trial_ends_at)}</div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#8A9AB8' }}>{fmtDate(p.created_at)}</div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        </>
         )}
       </div>
     </>
