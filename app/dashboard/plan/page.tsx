@@ -52,6 +52,7 @@ type Accion = {
   completada: boolean
   estado?: EstadoAccion
   dim: string
+  acuerdoVinculado?: { reunionId: string, acuerdoId: string }
 }
 
 type Foco = {
@@ -76,6 +77,7 @@ export default function PlanPage() {
   const [editando, setEditando] = useState<string|null>(null)
   const [areas, setAreas] = useState<string[]>([])
   const [vista, setVista] = useState<'lista' | 'tablero'>('lista')
+  const [reuniones, setReuniones] = useState<any[]>([])
 
   useEffect(() => {
     async function load() {
@@ -120,12 +122,53 @@ export default function PlanPage() {
           await supabase.from('plan_empresa').insert(nuevos.map(f => ({...f, user_id: user.id, ciclo: 1})))
         }
       }
+      const {data:reunionesData} = await supabase.from('reuniones_empresa').select('*').eq('user_id', user.id)
+      setReuniones(reunionesData || [])
+
       setLoading(false)
     }
     load()
   }, [router])
 
+  function estaCompletadaReal(accion: Accion): boolean {
+    if (accion.acuerdoVinculado) {
+      const reunion = reuniones.find(r => r.id === accion.acuerdoVinculado!.reunionId)
+      const acuerdo = reunion?.acuerdos?.find((a: any) => a.id === accion.acuerdoVinculado!.acuerdoId)
+      return acuerdo ? !!acuerdo.completado : false
+    }
+    return accion.completada
+  }
+
+  async function vincularAReuniones(focoId: string, accion: Accion) {
+    setSaving(true)
+    const {data:{user}} = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const acuerdoId = crypto.randomUUID()
+    const nuevaReunion = {
+      titulo: `Seguimiento: ${accion.texto}`,
+      area: accion.area || '',
+      fecha: new Date().toISOString().split('T')[0],
+      acuerdos: [{ id: acuerdoId, que: accion.texto, quien: accion.responsable || '', cuando: accion.fecha || '', completado: false, comentario: '' }],
+      user_id: user.id,
+    }
+    const {data:insertada} = await supabase.from('reuniones_empresa').insert(nuevaReunion).select().single()
+    if (insertada) {
+      setReuniones([...reuniones, insertada])
+      const nuevos = focos.map(f => f.id === focoId ? {
+        ...f,
+        acciones: f.acciones.map(a => a.id === accion.id ? {...a, acuerdoVinculado: {reunionId: insertada.id, acuerdoId}} : a)
+      } : f)
+      setFocos(nuevos)
+      const foco = nuevos.find(f => f.id === focoId)
+      if (foco) await supabase.from('plan_empresa').update({acciones: foco.acciones}).eq('id', focoId)
+    }
+    setSaving(false)
+  }
+
   async function toggleAccion(focoId: string, accionId: string) {
+    const foco0 = focos.find(f => f.id === focoId)
+    const accion0 = foco0?.acciones.find(a => a.id === accionId)
+    if (accion0?.acuerdoVinculado) { router.push('/dashboard/reuniones'); return }
     setSaving(true)
     const nuevos = focos.map(f => f.id === focoId ? {
       ...f,
@@ -181,7 +224,7 @@ export default function PlanPage() {
   }
 
   const totalAcciones = focos.reduce((a,f)=>a+f.acciones.length,0)
-  const completadas = focos.reduce((a,f)=>a+f.acciones.filter(a=>a.completada).length,0)
+  const completadas = focos.reduce((a,f)=>a+f.acciones.filter(a=>estaCompletadaReal(a)).length,0)
   const pct = totalAcciones > 0 ? Math.round((completadas/totalAcciones)*100) : 0
 
   const DIM_COLORS: Record<string,string> = {
@@ -348,7 +391,7 @@ export default function PlanPage() {
           <>
           {focos.map(foco => {
             const color = DIM_COLORS[foco.dim] || '#D97706'
-            const focoDone = foco.acciones.filter(a=>a.completada).length
+            const focoDone = foco.acciones.filter(a=>estaCompletadaReal(a)).length
             return (
               <div key={foco.id} className="foco-card">
                 <div className="foco-header">
@@ -357,19 +400,28 @@ export default function PlanPage() {
                   <div className="foco-progress">{focoDone}/{foco.acciones.length}</div>
                 </div>
                 <div className="acciones-list">
-                  {foco.acciones.map(accion => (
+                  {foco.acciones.map(accion => {
+                    const completadaReal = estaCompletadaReal(accion)
+                    return (
                     <div key={accion.id}>
                       <div className="accion-row">
                         <div
-                          className={`accion-check ${accion.completada?'done':''}`}
+                          className={`accion-check ${completadaReal?'done':''}`}
                           onClick={() => toggleAccion(foco.id, accion.id)}
                         />
                         <div className="accion-content">
-                          <div className={`accion-texto ${accion.completada?'done':''}`}>{accion.texto || 'Sin descripción'}</div>
+                          <div className={`accion-texto ${completadaReal?'done':''}`}>{accion.texto || 'Sin descripción'}</div>
                           <div className="accion-meta">
                             {accion.area && <span className="accion-meta-item" style={{color:'#D97706'}}>{accion.area}</span>}
                             {accion.responsable && <span className="accion-meta-item">👤 {accion.responsable}</span>}
                             {accion.fecha && <span className="accion-meta-item">📅 {accion.fecha}</span>}
+                            {accion.acuerdoVinculado ? (
+                              <span className="accion-meta-item" style={{color:'#D97706'}}>🔗 Seguido en Reuniones</span>
+                            ) : (
+                              <button className="accion-edit-btn" onClick={()=>vincularAReuniones(foco.id, accion)}>
+                                Seguir en Reuniones
+                              </button>
+                            )}
                             <button className="accion-edit-btn" onClick={()=>setEditando(editando===accion.id?null:accion.id)}>
                               {editando===accion.id ? 'Cancelar' : 'Editar'}
                             </button>
@@ -415,7 +467,7 @@ export default function PlanPage() {
                         </div>
                       )}
                     </div>
-                  ))}
+                  )})}
                   <div style={{padding:'8px 24px 16px'}}>
                     <button className="btn-agregar" onClick={()=>agregarAccion(foco.id)}>+ Agregar acción</button>
                   </div>
