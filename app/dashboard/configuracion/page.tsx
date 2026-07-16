@@ -19,6 +19,7 @@ export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
+  const [reiniciando, setReiniciando] = useState(false)
 
   const [nombre, setNombre] = useState('')
   const [rubro, setRubro] = useState('')
@@ -138,6 +139,30 @@ export default function ConfiguracionPage() {
 
   if (loading) return <div style={{minHeight:'100vh',background:'#07090E',display:'flex',alignItems:'center',justifyContent:'center',color:'#5A6888',fontFamily:'DM Sans,sans-serif',fontSize:'13px'}}>Cargando configuración...</div>
 
+  async function reiniciarCuenta() {
+    if (!window.confirm('Esto elimina diagnóstico, plan, KPIs, reuniones, problemas, mediciones y revisiones. La cuenta vuelve al onboarding como cliente nuevo. ¿Continuar?')) return
+    if (!window.confirm('Confirmación final: los datos no se pueden recuperar. ¿Eliminar todo?')) return
+    setReiniciando(true)
+    const {data:{user}} = await supabase.auth.getUser()
+    if (!user) { setReiniciando(false); return }
+    const {data: emp} = await supabase.from('empresas_empresa').select('id').eq('user_id', user.id).single()
+    await Promise.all([
+      supabase.from('diagnosticos_empresa').delete().eq('user_id', user.id),
+      supabase.from('plan_empresa').delete().eq('user_id', user.id),
+      supabase.from('kpis_empresa').delete().eq('user_id', user.id),
+      supabase.from('problemas_empresa').delete().eq('user_id', user.id),
+      supabase.from('reuniones_empresa').delete().eq('user_id', user.id),
+      supabase.from('revisiones_empresa').delete().eq('user_id', user.id),
+      emp ? supabase.from('cierres_ciclo_empresa').delete().eq('empresa_id', emp.id) : Promise.resolve(),
+    ])
+    await supabase.from('empresas_empresa').update({
+      onboarding_completo: false,
+      ciclo_numero: 1,
+      ciclo_inicio: null,
+    }).eq('user_id', user.id)
+    router.push('/onboarding')
+  }
+
   return (
     <>
       <style>{`
@@ -170,6 +195,10 @@ export default function ConfiguracionPage() {
         .btn-save{padding:11px 24px;border:none;background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-radius:0}
         .btn-save:hover{background:#B45309}
         .btn-save:disabled{opacity:0.5;cursor:not-allowed}
+        .section-riesgo{border-left:2px solid #EF4444}
+        .btn-riesgo{padding:11px 24px;border:1px solid #EF4444;background:none;color:#EF4444;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer}
+        .btn-riesgo:hover{background:#EF4444;color:#fff}
+        .btn-riesgo:disabled{opacity:0.5;cursor:not-allowed}
         .resultado-preview{background:var(--surf-3);border:1px solid var(--brd);padding:20px;margin:16px 0;font-family:'DM Mono',monospace;font-size:13px}
         .resultado-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd)}
         .resultado-row:last-child{border-bottom:none;padding-top:10px;margin-top:4px;border-top:1px solid var(--brd-2)}
@@ -319,6 +348,19 @@ export default function ConfiguracionPage() {
 
             <button className="btn-save" onClick={guardarAreas} disabled={saving}>
               {saving ? 'Guardando...' : 'Guardar áreas'}
+            </button>
+          </div>
+
+          {/* Zona de riesgo */}
+          <div className="section section-riesgo">
+            <div className="section-title">Reiniciar cuenta</div>
+            <div className="section-sub">
+              Elimina diagnóstico, plan, KPIs, reuniones, problemas, mediciones de ciclo y
+              revisiones. La empresa vuelve al onboarding como si fuera un cliente nuevo.
+              Los datos no se pueden recuperar.
+            </div>
+            <button className="btn-riesgo" onClick={reiniciarCuenta} disabled={reiniciando}>
+              {reiniciando ? 'Reiniciando...' : 'Reiniciar como cliente nuevo'}
             </button>
           </div>
         </main>
