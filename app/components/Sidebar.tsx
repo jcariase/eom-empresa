@@ -12,6 +12,7 @@ const NAV_ITEMS = [
     { label: 'Plan 90 días', path: '/dashboard/plan' },
     { label: 'KPIs', path: '/dashboard/kpis' },
     { label: 'Cierre de ciclo', path: '/dashboard/cierre' },
+    { label: 'Revisión EOM', path: '/dashboard/revision' },
   ]},
   { section: 'Gestión', items: [
     { label: 'Configuración', path: '/dashboard/configuracion' },
