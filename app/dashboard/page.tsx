@@ -114,7 +114,7 @@ function DashboardContent() {
 
         <main className="main">
           <div className="page-title">Dashboard</div>
-          <div className="page-sub">Ciclo 1 · {empresa.nombre}</div>
+          <div className="page-sub">Ciclo {empresa.ciclo_numero || 1} · {empresa.nombre}</div>
 
           {/* Contador ciclo */}
           {(() => {
