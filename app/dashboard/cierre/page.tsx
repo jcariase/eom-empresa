@@ -67,16 +67,11 @@ export default function CierreCicloPage() {
   const cicloActual = empresa.ciclo_numero || 1
   const diasCiclo = empresa.ciclo_inicio ? Math.floor((Date.now() - new Date(empresa.ciclo_inicio).getTime()) / (1000 * 60 * 60 * 24)) : 0
   const cierreActual = cierres.find(c => c.ciclo_numero === cicloActual)
-  const cierrePrevio = cierres.find(c => c.ciclo_numero === cicloActual - 1)
 
-  // Base del ciclo en curso: cierre del ciclo anterior, o el onboarding si es el ciclo 1
-  const baseCiclo = cierrePrevio ? {
-    ingresos_mensual: cierrePrevio.ingresos_mensual,
-    costo_directo_mensual: cierrePrevio.costo_directo_mensual,
-    gastos_fijos_mensual: cierrePrevio.gastos_fijos_mensual,
-    retiro_dueno_mensual: cierrePrevio.retiro_dueno_mensual,
-    clientes_activos: cierrePrevio.clientes_activos,
-  } : {
+  // Fuente única de verdad: la base del ciclo vigente vive en empresas_empresa
+  // (editable en Configuración). Al iniciar un ciclo nuevo, la medición anterior
+  // se copia automáticamente como nueva base.
+  const baseCiclo = {
     ingresos_mensual: empresa.ingresos_mensual || 0,
     costo_directo_mensual: empresa.costo_directo_mensual || 0,
     gastos_fijos_mensual: empresa.gastos_fijos_mensual || 0,
@@ -137,7 +132,16 @@ export default function CierreCicloPage() {
       ? new Date(hoy.getFullYear(), hoy.getMonth(), 1)
       : new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1)
     const { error: err } = await supabase.from('empresas_empresa')
-      .update({ ciclo_inicio: inicio.toISOString(), ciclo_numero: cicloActual + 1 })
+      .update({
+        ciclo_inicio: inicio.toISOString(),
+        ciclo_numero: cicloActual + 1,
+        // La medición del ciclo que termina pasa a ser la base del que comienza
+        ingresos_mensual: cierreActual.ingresos_mensual,
+        costo_directo_mensual: cierreActual.costo_directo_mensual,
+        gastos_fijos_mensual: cierreActual.gastos_fijos_mensual,
+        retiro_dueno_mensual: cierreActual.retiro_dueno_mensual,
+        clientes_activos: cierreActual.clientes_activos,
+      })
       .eq('id', empresa.id)
     setGuardando(false)
     if (err) { setError('No se pudo iniciar el nuevo ciclo.'); return }
