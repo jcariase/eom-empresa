@@ -92,6 +92,15 @@ export default function DiagnosticoPage() {
     load()
   }, [router])
 
+  async function rehacerDiagnostico() {
+    if (!window.confirm('¿Eliminar el diagnóstico y volver a responderlo? El resto de tus datos (KPIs, plan, reuniones) no se toca.')) return
+    const {data:{user}} = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('diagnosticos_empresa').delete().eq('user_id', user.id)
+    await supabase.from('empresas_empresa').update({onboarding_completo: false}).eq('user_id', user.id)
+    router.push('/onboarding')
+  }
+
   if (loading) return <div style={{minHeight:'100vh',background:'#07090E',display:'flex',alignItems:'center',justifyContent:'center',color:'#5A6888',fontFamily:'DM Sans,sans-serif',fontSize:'13px'}}>Cargando diagnóstico...</div>
 
   const scores = diagnostico?.scores || {}
@@ -162,8 +171,17 @@ export default function DiagnosticoPage() {
         <Sidebar empresaNombre={empresa?.nombre} />
 
         <main className="main">
-          <div className="page-title">Diagnóstico EOM</div>
-          <div className="page-sub">{empresa?.nombre} · Ciclo 1</div>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
+            <div>
+              <div className="page-title">Diagnóstico EOM</div>
+              <div className="page-sub">{empresa?.nombre} · Ciclo {empresa?.ciclo_numero || 1}</div>
+            </div>
+            <button
+              onClick={rehacerDiagnostico}
+              style={{background:'none',border:'1px solid var(--brd-2)',color:'#EF4444',fontFamily:"'DM Sans',sans-serif",fontSize:'12px',padding:'7px 14px',cursor:'pointer'}}>
+              Rehacer diagnóstico
+            </button>
+          </div>
 
           {(() => {
             const inicio = empresa?.ciclo_inicio ? new Date(empresa.ciclo_inicio) : new Date()
