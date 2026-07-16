@@ -144,6 +144,14 @@ export default function CierreCicloPage() {
     cargar()
   }
 
+  async function borrarCierre(id: string) {
+    if (!window.confirm('¿Eliminar esta medición? Esta acción no se puede deshacer.')) return
+    const { error: err } = await supabase.from('cierres_ciclo_empresa').delete().eq('id', id)
+    if (err) { setError('No se pudo eliminar la medición.'); return }
+    setError('')
+    cargar()
+  }
+
   function Delta({ actual, base, mejorSi }: { actual: number, base: number, mejorSi: string }) {
     const d = actual - base
     if (d === 0 || mejorSi === 'neutro') return <span className="delta neutro">{d === 0 ? 'sin cambio' : (d > 0 ? '+' : '−') + fmt(Math.abs(d))}</span>
@@ -220,6 +228,7 @@ export default function CierreCicloPage() {
         .btn-guardar:disabled{opacity:0.5;cursor:not-allowed}
         .btn-secundario{background:none;border:1px solid var(--amber);color:var(--amber);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:12px 28px;cursor:pointer}
         .error-msg{color:#EF4444;font-size:13px;margin-top:12px}
+        .btn-borrar{background:none;border:1px solid var(--brd-2);color:#EF4444;font-size:12px;padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif}
         .rep-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
         .rep-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);border:1px solid var(--amber-border,rgba(217,119,6,0.3));padding:4px 10px}
         table.rep{width:100%;border-collapse:collapse}
@@ -287,6 +296,7 @@ export default function CierreCicloPage() {
               )}
 
               {cierreActual.comentario && <div className="rep-comentario">{cierreActual.comentario}</div>}
+              <button className="btn-borrar" onClick={() => borrarCierre(cierreActual.id)}>Eliminar esta medición</button>
             </>
           ) : diasCiclo < 0 ? (
             <div className="aviso">
@@ -364,6 +374,7 @@ export default function CierreCicloPage() {
                       return desde.toLocaleDateString('es-CL') + ' al ' + hasta.toLocaleDateString('es-CL')
                     })()}</span>
                     <span className="hist-val">Ingresos ${fmt(c.ingresos_mensual)} · Resultado real ${fmt(d.resultadoReal)}</span>
+                    <button className="btn-borrar" onClick={() => borrarCierre(c.id)}>Eliminar</button>
                   </div>
                 )
               })}
