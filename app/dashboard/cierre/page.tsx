@@ -118,6 +118,7 @@ export default function CierreCicloPage() {
       base_gastos_fijos: baseCiclo.gastos_fijos_mensual,
       base_retiro_dueno: baseCiclo.retiro_dueno_mensual,
       base_clientes: baseCiclo.clientes_activos,
+      ciclo_inicio: empresa.ciclo_inicio ? new Date(empresa.ciclo_inicio).toISOString().slice(0, 10) : null,
       comentario: comentario.trim() || null,
     })
     setGuardando(false)
@@ -129,8 +130,14 @@ export default function CierreCicloPage() {
 
   async function iniciarSiguienteCiclo() {
     setGuardando(true)
+    // Ancla contable: el ciclo parte el dia 1 del mes. Hasta el dia 5 hay
+    // gracia (parte retroactivo al 1 de este mes); despues, el 1 del mes siguiente.
+    const hoy = new Date()
+    const inicio = hoy.getDate() <= 5
+      ? new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+      : new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1)
     const { error: err } = await supabase.from('empresas_empresa')
-      .update({ ciclo_inicio: new Date().toISOString(), ciclo_numero: cicloActual + 1 })
+      .update({ ciclo_inicio: inicio.toISOString(), ciclo_numero: cicloActual + 1 })
       .eq('id', empresa.id)
     setGuardando(false)
     if (err) { setError('No se pudo iniciar el nuevo ciclo.'); return }
@@ -281,6 +288,15 @@ export default function CierreCicloPage() {
 
               {cierreActual.comentario && <div className="rep-comentario">{cierreActual.comentario}</div>}
             </>
+          ) : diasCiclo < 0 ? (
+            <div className="aviso">
+              <div className="aviso-dias">{Math.abs(diasCiclo)}</div>
+              <div className="aviso-title">Días para el inicio del ciclo {cicloActual}</div>
+              <div className="aviso-sub">
+                El ciclo parte el {new Date(empresa.ciclo_inicio).toLocaleDateString('es-CL')},
+                alineado con el mes contable. Usa estos días para dejar listo el Plan 90 días.
+              </div>
+            </div>
           ) : diasCiclo < 60 ? (
             <div className="aviso">
               <div className="aviso-dias">{60 - diasCiclo}</div>
@@ -342,7 +358,11 @@ export default function CierreCicloPage() {
                 const d = deriv(c.ingresos_mensual, c.costo_directo_mensual, c.gastos_fijos_mensual, c.retiro_dueno_mensual)
                 return (
                   <div className="hist-row" key={c.id}>
-                    <span className="hist-ciclo">Ciclo {c.ciclo_numero} · {new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-CL')}</span>
+                    <span className="hist-ciclo">Ciclo {c.ciclo_numero} · {(() => {
+                      const desde = c.ciclo_inicio ? new Date(c.ciclo_inicio + 'T12:00:00') : new Date(new Date(c.fecha + 'T12:00:00').getTime() - (c.dia_ciclo || 0) * 86400000)
+                      const hasta = new Date(desde.getTime() + 90 * 86400000)
+                      return desde.toLocaleDateString('es-CL') + ' al ' + hasta.toLocaleDateString('es-CL')
+                    })()}</span>
                     <span className="hist-val">Ingresos ${fmt(c.ingresos_mensual)} · Resultado real ${fmt(d.resultadoReal)}</span>
                   </div>
                 )
