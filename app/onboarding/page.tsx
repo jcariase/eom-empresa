@@ -133,8 +133,8 @@ export default function Onboarding() {
       clientes_activos: parseInt(clientes),
       areas,
       ciclo_inicio: new Date().toISOString(),
-    })
-    if (empError) { console.error('Error guardando empresa:', empError); setGuardando(false); return }
+    }, { onConflict: 'user_id' })
+    if (empError) { console.error('Error guardando empresa:', empError.message, empError.details); setGuardando(false); return }
     setGuardando(false)
     setPaso(3)
   }
