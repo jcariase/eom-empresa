@@ -211,6 +211,17 @@ export default function RevisionPage() {
     setGuardado(true)
   }
 
+  async function borrarRevision() {
+    if (!ultimaRevision) return
+    if (!window.confirm('¿Eliminar esta revisión? Esta acción no se puede deshacer.')) return
+    const { error: err } = await supabase.from('revisiones_empresa').delete().eq('id', ultimaRevision.id)
+    if (err) { setError('No se pudo eliminar la revisión.'); return }
+    setGuardado(false)
+    setError('')
+    const { data: revs } = await supabase.from('revisiones_empresa').select('*').eq('empresa_id', empresa.id).eq('estado', 'cerrada').order('created_at', { ascending: false }).limit(1)
+    setUltimaRevision(revs?.[0] || null)
+  }
+
   return (
     <>
       <style>{`
@@ -243,6 +254,7 @@ export default function RevisionPage() {
         .btn-guardar{background:var(--amber);border:none;color:#fff;font-size:14px;font-weight:500;padding:12px 28px;cursor:pointer;margin-top:16px;font-family:'DM Sans',sans-serif}
         .btn-guardar:disabled{opacity:0.5;cursor:not-allowed}
         .error-msg{color:#EF4444;font-size:13px;margin-top:12px}
+        .btn-borrar{background:none;border:1px solid var(--brd-2);color:#EF4444;font-size:12px;padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-left:10px}
         .ok-msg{color:#16A34A;font-size:13px;margin-top:12px}
         .prev-rev{font-size:12px;color:var(--txt-3);margin-bottom:20px}
         @media(max-width:768px){.layout{grid-template-columns:1fr}.main{padding:20px 16px}}
@@ -255,10 +267,11 @@ export default function RevisionPage() {
           <div className="page-title">Revisión EOM</div>
           <div className="page-sub">Pulso del sistema de gestión · {empresa.nombre}</div>
 
-          {ultimaRevision && !guardado && (
+          {ultimaRevision && (
             <div className="prev-rev">
               Última revisión: {new Date(ultimaRevision.created_at).toLocaleDateString('es-CL')} ·
               {' '}{ultimaRevision.puntaje_total} de 120 · Nivel {ultimaRevision.nivel_resultante} {NIVELES[ultimaRevision.nivel_resultante]}
+              <button className="btn-borrar" onClick={borrarRevision}>Eliminar</button>
             </div>
           )}
 
