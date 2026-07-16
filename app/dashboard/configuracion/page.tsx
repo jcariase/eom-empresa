@@ -244,7 +244,7 @@ export default function ConfiguracionPage() {
           <div className="section">
             <div className="section-title">Números base del ciclo</div>
             <div className="section-sub">
-              Estos son los valores de referencia del inicio del ciclo. Se comparan con el cierre a los 90 días para medir el impacto real de EOM.
+              Estos son los valores de partida del ciclo vigente y se comparan con la medición del día 60. Si ya guardaste la medición de este ciclo, el reporte conserva la base con la que se generó; los cambios que hagas aquí aplican hacia adelante. Al iniciar un ciclo nuevo, la última medición se convierte automáticamente en la nueva base.
             </div>
             <div className="field-row">
               <div className="field-group">
