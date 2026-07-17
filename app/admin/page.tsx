@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getPlanStatus } from '@/lib/plan'
 
 const ADMIN_EMAILS = ['jc0904@gmail.com', 'jarias@fen.uchile.cl']
 
@@ -56,7 +57,7 @@ export default function AdminPage() {
   const [filtro, setFiltro] = useState('')
   const [editando, setEditando] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [editPlan, setEditPlan] = useState<{ nombre: string; vence: string }>({ nombre: 'Consultoría', vence: '' })
+  const [editPlan, setEditPlan] = useState<{ activo: boolean; nombre: string; vence: string }>({ activo: false, nombre: 'Consultoría', vence: '' })
 
   useEffect(() => {
     async function check() {
@@ -86,10 +87,15 @@ export default function AdminPage() {
     setLoading(false)
   }
 
+  function abrirEdicionPlan(e: Empresa) {
+    setEditando(e.user_id)
+    setEditPlan({ activo: e.plan_activo, nombre: e.plan_nombre || 'Consultoría', vence: e.plan_vence || '' })
+  }
+
   async function guardarPlan(userId: string) {
     setSaving(true)
     await supabase.from('empresas_empresa').update({
-      plan_activo: true,
+      plan_activo: editPlan.activo,
       plan_nombre: editPlan.nombre,
       plan_vence: editPlan.vence || null,
     }).eq('user_id', userId)
@@ -98,11 +104,12 @@ export default function AdminPage() {
     setSaving(false)
   }
 
-  async function desactivarPlan(userId: string) {
-    setSaving(true)
-    await supabase.from('empresas_empresa').update({ plan_activo: false, plan_vence: null }).eq('user_id', userId)
-    await cargarDatos()
-    setSaving(false)
+  function estadoPlan(e: Empresa): { label: string; color: string } {
+    const { estado, diasRestantes } = getPlanStatus(e)
+    if (estado === 'pagado') return { label: `${e.plan_nombre || 'Plan'}${e.plan_vence ? ' · hasta ' + fmtDate(e.plan_vence) : ''}`, color: '#16A34A' }
+    if (estado === 'piloto') return { label: `Piloto · ${diasRestantes} día${diasRestantes === 1 ? '' : 's'}`, color: '#D97706' }
+    if (estado === 'vencido') return { label: 'Vencido', color: '#EF4444' }
+    return { label: 'Pendiente', color: '#5A6888' }
   }
 
   const filtradas = empresas.filter(e =>
@@ -171,6 +178,8 @@ export default function AdminPage() {
         .badge{display:inline-block;padding:3px 10px;font-size:11px;font-family:'DM Mono',monospace;border:1px solid;border-radius:0}
         .plan-card{background:#1A2035;border:1px solid rgba(255,255,255,0.08);padding:12px;margin-top:4px}
         .plan-label{font-family:'DM Mono',monospace;font-size:10px;color:#5A6888;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+        .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#8A9AB8;margin-bottom:10px}
+        .toggle-row input{accent-color:#D97706;width:16px;height:16px;cursor:pointer}
         .field-small{width:100%;padding:7px 10px;border:1px solid rgba(255,255,255,0.12);background:#0C0F18;color:#E8EDF8;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;margin-bottom:8px}
         .field-small:focus{border-color:#D97706}
         .btn-activar{padding:7px 14px;border:none;background:#D97706;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;width:100%;margin-bottom:6px}
@@ -242,25 +251,25 @@ export default function AdminPage() {
                 </div>
                 <div style={{ fontSize: 12, color: '#8A9AB8' }}>{fmtDate(e.created_at)}</div>
                 <div>
-                  {e.plan_activo ? (
-                    <div>
-                      <span className="badge" style={{ color: '#16A34A', borderColor: '#16A34A44', marginBottom: 6, display: 'block' }}>
-                        {e.plan_nombre} {e.plan_vence ? `· hasta ${fmtDate(e.plan_vence)}` : ''}
-                      </span>
-                      <button className="btn-desactivar" onClick={() => desactivarPlan(e.user_id)} disabled={saving}>Desactivar</button>
-                    </div>
-                  ) : editando === e.user_id ? (
+                  {(() => {
+                    const est = estadoPlan(e)
+                    return <span className="badge" style={{ color: est.color, borderColor: est.color + '44', marginBottom: 6, display: 'block' }}>{est.label}</span>
+                  })()}
+
+                  {editando === e.user_id ? (
                     <div className="plan-card">
-                      <div className="plan-label">Activar plan</div>
+                      <div className="plan-label">Editar plan</div>
+                      <label className="toggle-row">
+                        <span>Plan activo (pagado)</span>
+                        <input type="checkbox" checked={editPlan.activo} onChange={ev => setEditPlan(p => ({ ...p, activo: ev.target.checked }))} />
+                      </label>
                       <input className="field-small" placeholder="Nombre plan" value={editPlan.nombre} onChange={ev => setEditPlan(p => ({ ...p, nombre: ev.target.value }))} />
                       <input className="field-small" type="date" value={editPlan.vence} onChange={ev => setEditPlan(p => ({ ...p, vence: ev.target.value }))} />
-                      <button className="btn-activar" onClick={() => guardarPlan(e.user_id)} disabled={saving}>{saving ? 'Guardando...' : 'Confirmar activación →'}</button>
+                      <button className="btn-activar" onClick={() => guardarPlan(e.user_id)} disabled={saving}>{saving ? 'Guardando...' : 'Guardar →'}</button>
                       <button className="btn-desactivar" onClick={() => setEditando(null)}>Cancelar</button>
                     </div>
                   ) : (
-                    <button className="btn-editar" onClick={() => { setEditando(e.user_id); setEditPlan({ nombre: 'Consultoría', vence: '' }) }}>
-                      + Activar plan
-                    </button>
+                    <button className="btn-editar" onClick={() => abrirEdicionPlan(e)}>Editar plan</button>
                   )}
                 </div>
               </div>
