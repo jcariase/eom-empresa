@@ -146,6 +146,17 @@ function getPct(kpi: KPI) {
   return Math.min(100, Math.round(kpi.es_inverso ? (kpi.meta / Math.max(kpi.actual, 0.01)) * 100 : (kpi.actual / kpi.meta) * 100))
 }
 
+// Para KPIs en puntos porcentuales, un "% de cumplimiento" (ej. 92%) se
+// confunde con el propio valor del KPI (también un %). En su lugar se
+// muestra la brecha en puntos contra la meta, que no tiene esa ambigüedad.
+function textoCumplimiento(kpi: KPI, pct: number): string {
+  if (kpi.unidad !== 'porcentaje') return `Cumplimiento: ${pct}%`
+  const metaSuperada = kpi.es_inverso ? kpi.actual <= kpi.meta : kpi.actual >= kpi.meta
+  if (metaSuperada) return 'Meta superada'
+  const brecha = redondear(Math.abs(kpi.meta - kpi.actual), 1)
+  return `A ${brecha.toLocaleString('es-CL')} pts de la meta`
+}
+
 function formatVal(kpi: KPI, val: number) {
   const decimales = kpi.unidad === 'pesos' ? 0 : 1
   const n = val.toLocaleString('es-CL', { maximumFractionDigits: decimales })
@@ -522,7 +533,7 @@ export default function KPIsPage() {
                                 {kpi.actual > 0 ? formatVal(kpi, kpi.actual) : '—'}
                               </div>
                               <div className="kpi-meta-label">
-                                {kpi.actual > 0 ? `Meta: ${formatVal(kpi, kpi.meta)} · Cumplimiento: ${pct}%` : `Meta: ${kpi.meta > 0 ? formatVal(kpi, kpi.meta) : 'sin definir'}`}
+                                {kpi.actual > 0 ? `Meta: ${formatVal(kpi, kpi.meta)} · ${textoCumplimiento(kpi, pct)}` : `Meta: ${kpi.meta > 0 ? formatVal(kpi, kpi.meta) : 'sin definir'}`}
                               </div>
                             </div>
                             <div className="kpi-actions">
