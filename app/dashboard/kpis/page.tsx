@@ -6,9 +6,15 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Sidebar from '../../components/Sidebar'
 
+// ratio: (A÷B)×100 · margen: ((A−B)÷A)×100 · promedio: A÷B sin ×100
+// dso: (A÷B)×30 (días de cobranza, un ratio financiero estándar con ese
+// multiplicador fijo en vez de ×100) · directo: un solo número, sin componentes.
 type FormulaKPI =
   | { tipo: 'directo' }
   | { tipo: 'ratio'; componenteA: string; componenteB: string }
+  | { tipo: 'margen'; componenteA: string; componenteB: string }
+  | { tipo: 'promedio'; componenteA: string; componenteB: string }
+  | { tipo: 'dso'; componenteA: string; componenteB: string }
 
 type KPI = {
   id: string
@@ -36,12 +42,14 @@ const UNIDAD_LABELS: Record<string, string> = {
 // `dim`, que no se usa en ningún otro punto de la app. operacion siempre es
 // 'division' y por_cien siempre coincide con unidad === 'porcentaje', así que
 // no hace falta persistir ninguno de los dos.
+const TIPOS_CON_COMPONENTES = ['ratio', 'margen', 'promedio', 'dso'] as const
+
 function parseFormula(dim: string | null | undefined): FormulaKPI {
   if (!dim) return { tipo: 'directo' }
   try {
     const p = JSON.parse(dim)
-    if (p && p.tipo === 'ratio' && typeof p.componenteA === 'string' && typeof p.componenteB === 'string') {
-      return { tipo: 'ratio', componenteA: p.componenteA, componenteB: p.componenteB }
+    if (p && TIPOS_CON_COMPONENTES.includes(p.tipo) && typeof p.componenteA === 'string' && typeof p.componenteB === 'string') {
+      return { tipo: p.tipo, componenteA: p.componenteA, componenteB: p.componenteB }
     }
   } catch {}
   return { tipo: 'directo' }
@@ -49,7 +57,7 @@ function parseFormula(dim: string | null | undefined): FormulaKPI {
 
 function serializeFormula(f: FormulaKPI): string | null {
   if (f.tipo === 'directo') return null
-  return JSON.stringify({ tipo: 'ratio', componenteA: f.componenteA, componenteB: f.componenteB })
+  return JSON.stringify({ tipo: f.tipo, componenteA: f.componenteA, componenteB: f.componenteB })
 }
 
 function redondear(n: number, decimales = 1): number {
@@ -57,65 +65,95 @@ function redondear(n: number, decimales = 1): number {
   return Math.round(n * f) / f
 }
 
-function calcularRatio(a: number, b: number, porCien: boolean): number | null {
-  if (b === 0) return null
-  const r = a / b
-  return redondear(porCien ? r * 100 : r, 1)
+// El "denominador" no siempre es B: en margen se divide por A (los ingresos).
+function denominadorInvalido(formula: FormulaKPI, a: number, b: number): boolean {
+  if (formula.tipo === 'margen') return a === 0
+  if (formula.tipo === 'directo') return false
+  return b === 0
+}
+
+// Solo avisa "denominador es cero" una vez que el campo divisor (A en
+// margen, B en el resto) fue escrito -- no exige que ambos campos estén
+// completos, a diferencia de la vista previa del resultado.
+function divisorEsCero(formula: FormulaKPI, aStr: string, bStr: string, aNum: number, bNum: number): boolean {
+  if (formula.tipo === 'directo') return false
+  if (formula.tipo === 'margen') return aStr.trim() !== '' && aNum === 0
+  return bStr.trim() !== '' && bNum === 0
+}
+
+function calcularFormula(formula: FormulaKPI, a: number, b: number): number | null {
+  if (denominadorInvalido(formula, a, b)) return null
+  switch (formula.tipo) {
+    case 'ratio': return redondear((a / b) * 100, 1)
+    case 'margen': return redondear(((a - b) / a) * 100, 1)
+    case 'promedio': return redondear(a / b, 1)
+    case 'dso': return redondear((a / b) * 30, 1)
+    default: return null
+  }
 }
 
 function formulaTexto(kpi: { formula: FormulaKPI; unidad: KPI['unidad'] }): string {
-  if (kpi.formula.tipo === 'directo') return ''
-  const porCien = kpi.unidad === 'porcentaje'
-  return `(${kpi.formula.componenteA} ÷ ${kpi.formula.componenteB})${porCien ? ' × 100' : ''}`
+  const f = kpi.formula
+  if (f.tipo === 'directo') return ''
+  if (f.tipo === 'margen') return `((${f.componenteA} − ${f.componenteB}) ÷ ${f.componenteA}) × 100`
+  if (f.tipo === 'dso') return `(${f.componenteA} ÷ ${f.componenteB}) × 30`
+  if (f.tipo === 'promedio') return `${f.componenteA} ÷ ${f.componenteB}`
+  return `(${f.componenteA} ÷ ${f.componenteB}) × 100`
 }
 
 function kpiDirecto(nombre: string, unidad: KPI['unidad'], meta: number, esInverso: boolean, descripcion: string): BibliotecaKPI {
   return { nombre, unidad, meta, estandar: true, es_inverso: esInverso, formula: { tipo: 'directo' }, descripcion }
 }
 
-function kpiRatio(nombre: string, unidad: KPI['unidad'], meta: number, esInverso: boolean, componenteA: string, componenteB: string, descripcion: string): BibliotecaKPI {
-  return { nombre, unidad, meta, estandar: true, es_inverso: esInverso, formula: { tipo: 'ratio', componenteA, componenteB }, descripcion }
+function construirKPIConComponentes(tipo: 'ratio' | 'margen' | 'promedio' | 'dso') {
+  return (nombre: string, unidad: KPI['unidad'], meta: number, esInverso: boolean, componenteA: string, componenteB: string, descripcion: string): BibliotecaKPI =>
+    ({ nombre, unidad, meta, estandar: true, es_inverso: esInverso, formula: { tipo, componenteA, componenteB }, descripcion })
 }
+
+const kpiRatio = construirKPIConComponentes('ratio')
+const kpiMargen = construirKPIConComponentes('margen')
+const kpiPromedio = construirKPIConComponentes('promedio')
+const kpiDso = construirKPIConComponentes('dso')
 
 const BIBLIOTECA: Record<string, BibliotecaKPI[]> = {
   'Comercial': [
     kpiDirecto('Ingresos por ventas', 'pesos', 0, false, `¿Para qué sirve?\nSin saber cuánto vendiste, no puedes saber si tu empresa crece o se encoge.\n\n¿Cómo lo calculas?\nSuma todas las facturas o boletas emitidas este mes.\n\n¿Dónde encuentras el dato?\nSistema de facturación electrónica del SII o libro de ventas.`),
     kpiRatio('Tasa de cierre de propuestas', 'porcentaje', 30, false, 'Propuestas aceptadas', 'Total propuestas enviadas', `¿Para qué sirve?\nMide la efectividad de tu equipo de ventas. Una tasa baja puede indicar problemas de precio, propuesta o seguimiento.\n\n¿Cómo lo calculas?\nCuenta cuántas propuestas enviadas este mes fueron aceptadas. Divide por el total enviado.\n\n¿Dónde encuentras el dato?\nRegistro de propuestas o CRM. Si no tienes, una planilla simple con fecha, cliente, estado.`),
     kpiDirecto('Nuevos clientes del mes', 'numero', 5, false, `¿Para qué sirve?\nMedir cuántos clientes nuevos entran cada mes te dice si tu empresa está creciendo o solo reteniendo.\n\n¿Cómo lo calculas?\nCuenta los clientes que compraron este mes y no compraron en los últimos 6 meses.\n\n¿Dónde encuentras el dato?\nHistorial de ventas o registro de clientes.`),
-    kpiRatio('Ticket promedio', 'pesos', 0, false, 'Ingresos totales', 'Número de ventas del mes', `¿Para qué sirve?\nSaber cuánto gasta en promedio cada cliente te ayuda a identificar si estás vendiendo poco por venta o si puedes hacer upselling.\n\n¿Cómo lo calculas?\nDivide los ingresos totales del mes por el número de órdenes o ventas.\n\n¿Dónde encuentras el dato?\nLibro de ventas.`),
-    kpiDirecto('Tiempo de ciclo de venta', 'dias', 14, true, `¿Para qué sirve?\nUn ciclo de venta largo inmoviliza recursos y retrasa el ingreso de caja. Reducirlo mejora el flujo directamente.\n\n¿Cómo lo calculas?\nRegistra la fecha del primer contacto y la fecha de la primera factura. Promedia ese número.\n\n¿Dónde encuentras el dato?\nRegistro de oportunidades o CRM.`),
+    kpiPromedio('Ticket promedio', 'pesos', 0, false, 'Ingresos totales', 'Número de ventas del mes', `¿Para qué sirve?\nSaber cuánto gasta en promedio cada cliente te ayuda a identificar si estás vendiendo poco por venta o si puedes hacer upselling.\n\n¿Cómo lo calculas?\nDivide los ingresos totales del mes por el número de órdenes o ventas.\n\n¿Dónde encuentras el dato?\nLibro de ventas.`),
+    kpiPromedio('Tiempo de ciclo de venta', 'dias', 14, true, 'Suma de días de ciclo de venta (ventas cerradas del mes)', 'Número de ventas cerradas', `¿Para qué sirve?\nUn ciclo de venta largo inmoviliza recursos y retrasa el ingreso de caja. Reducirlo mejora el flujo directamente.\n\n¿Cómo lo calculas?\nRegistra la fecha del primer contacto y la fecha de la primera factura de cada venta cerrada. Suma esos días y divide por el número de ventas.\n\n¿Dónde encuentras el dato?\nRegistro de oportunidades o CRM.`),
     kpiRatio('Tasa de retención de clientes', 'porcentaje', 80, false, 'Clientes que repitieron compra', 'Clientes del mes anterior', `¿Para qué sirve?\nRetener un cliente cuesta 5x menos que conseguir uno nuevo. Una tasa de retención baja es una fuga silenciosa de dinero.\n\n¿Cómo lo calculas?\nDe los clientes que compraron el mes pasado, cuántos volvieron a comprar este mes.\n\n¿Dónde encuentras el dato?\nHistorial de ventas.`),
   ],
   'Operaciones': [
     kpiRatio('Entregas a tiempo', 'porcentaje', 95, false, 'Entregas en fecha prometida', 'Total entregas', `¿Para qué sirve?\nEs el indicador más directo de confiabilidad. Un cliente al que le cumples siempre vuelve.\n\n¿Cómo lo calculas?\nCuenta las entregas del mes que llegaron en o antes de la fecha acordada. Divide por el total.\n\n¿Dónde encuentras el dato?\nRegistro de órdenes con fecha prometida y fecha real.`),
     kpiRatio('Órdenes sin error', 'porcentaje', 98, false, 'Órdenes sin reclamo', 'Total órdenes', `¿Para qué sirve?\nCada error tiene costo doble: corregirlo y la confianza perdida.\n\n¿Cómo lo calculas?\nResta las órdenes con reclamo del total. Divide por el total.\n\n¿Dónde encuentras el dato?\nRegistro de reclamos o libro de servicio.`),
     kpiRatio('Capacidad utilizada', 'porcentaje', 80, false, 'Producción real', 'Capacidad máxima', `¿Para qué sirve?\nMenos de 60% = recursos ociosos. Más de 90% = riesgo de errores y retrasos.\n\n¿Cómo lo calculas?\nDefine tu capacidad máxima (horas, equipos, unidades). Mide cuánto usaste realmente.\n\n¿Dónde encuentras el dato?\nControl de producción o registro de equipos.`),
-    kpiRatio('Tiempo respuesta a clientes', 'horas', 4, true, 'Suma de horas de espera', 'Número de solicitudes', `¿Para qué sirve?\nResponder rápido aumenta la probabilidad de cierre y satisfacción.\n\n¿Cómo lo calculas?\nRegistra hora de entrada y hora de primera respuesta real. Promedia.\n\n¿Dónde encuentras el dato?\nWhatsApp Business o email.`),
+    kpiPromedio('Tiempo respuesta a clientes', 'horas', 4, true, 'Suma de horas de espera', 'Número de solicitudes', `¿Para qué sirve?\nResponder rápido aumenta la probabilidad de cierre y satisfacción.\n\n¿Cómo lo calculas?\nRegistra hora de entrada y hora de primera respuesta real de cada solicitud. Suma esas horas y divide por el número de solicitudes.\n\n¿Dónde encuentras el dato?\nWhatsApp Business o email.`),
     kpiDirecto('Costo de retrabajo', 'pesos', 0, true, `¿Para qué sirve?\nEl retrabajo es dinero que gastas dos veces por el mismo resultado. Medirlo hace visible un costo que suele esconderse.\n\n¿Cómo lo calculas?\nSuma los materiales, horas y subcontratos usados para corregir trabajos ya entregados.\n\n¿Dónde encuentras el dato?\nRegistro de garantías o correcciones internas.`),
   ],
   'Administración y Finanzas': [
-    kpiDirecto('Margen bruto', 'porcentaje', 40, false, `¿Para qué sirve?\nTe dice cuánto queda de cada peso vendido antes de pagar gastos fijos.\n\n¿Cómo lo calculas?\nResta el costo directo (materiales, mano de obra directa) de los ingresos. Divide por los ingresos.\n\n¿Dónde encuentras el dato?\nFacturas de compra + liquidaciones de personal de producción.`),
-    kpiDirecto('Días de cobranza (DSO)', 'dias', 30, true, `¿Para qué sirve?\nUn DSO alto significa que estás financiando a tus clientes. Eso seca la caja aunque el negocio sea rentable.\n\n¿Cómo lo calculas?\nToma el saldo de cuentas por cobrar al cierre del mes. Divide por los ingresos del mes. Multiplica por 30.\n\n¿Dónde encuentras el dato?\nBalance de cuentas por cobrar (tu contador lo tiene).`),
+    kpiMargen('Margen bruto', 'porcentaje', 40, false, 'Ingresos del mes', 'Costo directo del mes', `¿Para qué sirve?\nTe dice cuánto queda de cada peso vendido antes de pagar gastos fijos.\n\n¿Cómo lo calculas?\nResta el costo directo (materiales, mano de obra directa) de los ingresos. Divide por los ingresos.\n\n¿Dónde encuentras el dato?\nFacturas de compra + liquidaciones de personal de producción.`),
+    kpiDso('Días de cobranza (DSO)', 'dias', 30, true, 'Cuentas por cobrar', 'Ingresos del mes', `¿Para qué sirve?\nUn DSO alto significa que estás financiando a tus clientes. Eso seca la caja aunque el negocio sea rentable.\n\n¿Cómo lo calculas?\nToma el saldo de cuentas por cobrar al cierre del mes. Se divide por los ingresos del mes y se multiplica por 30.\n\n¿Dónde encuentras el dato?\nBalance de cuentas por cobrar (tu contador lo tiene).`),
     kpiRatio('Gastos fijos vs presupuesto', 'porcentaje', 100, true, 'Gastos fijos reales', 'Gastos fijos presupuestados', `¿Para qué sirve?\nTe alerta cuando gastas más de lo planificado en costos inevitables.\n\n¿Cómo lo calculas?\nSuma arriendo, sueldos admin, servicios. Divide por lo que presupuestaste para esos ítems.\n\n¿Dónde encuentras el dato?\nComprobantes de pago del mes o resumen del contador.`),
     kpiDirecto('Flujo de caja proyectado', 'pesos', 0, false, `¿Para qué sirve?\nEl 60% de las pymes que quiebran son rentables pero se quedan sin caja. Proyectar evita las sorpresas.\n\n¿Cómo lo calculas?\nToma lo que tienes en cuentas hoy. Suma lo que esperas cobrar este mes. Resta lo que debes pagar.\n\n¿Dónde encuentras el dato?\nExtracto bancario + facturas por cobrar + compromisos de pago.`),
     kpiRatio('Pago a proveedores en plazo', 'porcentaje', 95, false, 'Facturas pagadas en plazo', 'Total facturas vencidas', `¿Para qué sirve?\nPagar tarde daña la relación con proveedores y puede cortar el crédito que necesitas para operar.\n\n¿Cómo lo calculas?\nDe todas las facturas que vencieron este mes, cuántas pagaste antes del vencimiento.\n\n¿Dónde encuentras el dato?\nRegistro de cuentas por pagar o tu contador.`),
   ],
   'Logística y Bodega': [
     kpiRatio('Exactitud de inventario', 'porcentaje', 98, false, 'Ítems con stock correcto', 'Total ítems contados', `¿Para qué sirve?\nUn inventario inexacto genera quiebres de stock o sobrestock, ambos cuestan dinero.\n\n¿Cómo lo calculas?\nHaz un conteo físico de una muestra. Compara con lo que dice el sistema. Los que coinciden son los correctos.\n\n¿Dónde encuentras el dato?\nConteo físico vs sistema de inventario.`),
-    kpiDirecto('Tiempo de despacho', 'horas', 24, true, `¿Para qué sirve?\nUn despacho lento retrasa las entregas y afecta la satisfacción del cliente final.\n\n¿Cómo lo calculas?\nRegistra la hora en que la orden llega a bodega y la hora en que sale el despacho. Promedia.\n\n¿Dónde encuentras el dato?\nRegistro de órdenes de despacho.`),
-    kpiRatio('Rotación de inventario', 'numero', 4, false, 'Costo de ventas anual', 'Inventario promedio', `¿Para qué sirve?\nUna rotación baja significa que tienes capital inmovilizado en bodega. Alto puede significar riesgo de quiebre.\n\n¿Cómo lo calculas?\nDivide el costo de lo vendido en el año por el valor promedio del inventario.\n\n¿Dónde encuentras el dato?\nCosto de ventas (contador) + valor de inventario (bodega).`),
+    kpiPromedio('Tiempo de despacho', 'horas', 24, true, 'Suma de horas de despacho (órdenes del mes)', 'Número de órdenes despachadas', `¿Para qué sirve?\nUn despacho lento retrasa las entregas y afecta la satisfacción del cliente final.\n\n¿Cómo lo calculas?\nRegistra la hora en que la orden llega a bodega y la hora en que sale el despacho de cada orden. Suma esas horas y divide por el número de órdenes.\n\n¿Dónde encuentras el dato?\nRegistro de órdenes de despacho.`),
+    kpiPromedio('Rotación de inventario', 'numero', 4, false, 'Costo de ventas anual', 'Inventario promedio', `¿Para qué sirve?\nUna rotación baja significa que tienes capital inmovilizado en bodega. Alto puede significar riesgo de quiebre.\n\n¿Cómo lo calculas?\nDivide el costo de lo vendido en el año por el valor promedio del inventario.\n\n¿Dónde encuentras el dato?\nCosto de ventas (contador) + valor de inventario (bodega).`),
     kpiDirecto('Quiebres de stock', 'numero', 0, true, `¿Para qué sirve?\nCada quiebre de stock es una venta perdida o una entrega retrasada. La meta es cero.\n\n¿Cómo lo calculas?\nRegistra cada vez que un ítem demandado no estaba disponible en bodega.\n\n¿Dónde encuentras el dato?\nSistema de inventario o registro de rechazos de orden.`),
   ],
   'Personas y RRHH': [
     kpiRatio('Ausentismo', 'porcentaje', 3, true, 'Días perdidos', 'Días hábiles totales del equipo', `¿Para qué sirve?\nEl ausentismo tiene costo directo: pagas el sueldo completo pero recibes menos trabajo.\n\n¿Cómo lo calculas?\nSuma días perdidos por licencias e inasistencias. Divide por personas × días hábiles del mes.\n\n¿Dónde encuentras el dato?\nControl de asistencia o libro de licencias médicas.`),
     kpiRatio('Rotación anual', 'porcentaje', 10, true, 'Personas que se fueron en 12 meses', 'Dotación promedio', `¿Para qué sirve?\nReemplazar a una persona cuesta entre 6 y 18 meses de su sueldo.\n\n¿Cómo lo calculas?\nCuenta renuncias y despidos de los últimos 12 meses. Divide por el promedio de dotación.\n\n¿Dónde encuentras el dato?\nFiniquitos de los últimos 12 meses.`),
     kpiRatio('Cumplimiento de compromisos', 'porcentaje', 90, false, 'Compromisos cerrados a tiempo', 'Total compromisos', `¿Para qué sirve?\nEs el termómetro más honesto de la cultura de tu equipo.\n\n¿Cómo lo calculas?\nLleva registro de los acuerdos de reuniones con responsable y fecha. Cuenta cuántos se cerraron en plazo.\n\n¿Dónde encuentras el dato?\nMódulo de Reuniones de EOM OS.`),
-    kpiRatio('Horas de capacitación por persona', 'horas', 4, false, 'Total horas de capacitación', 'Número de personas', `¿Para qué sirve?\nEquipos que se capacitan cometen menos errores y tienen más compromiso.\n\n¿Cómo lo calculas?\nSuma todas las horas de capacitación del mes (cursos, inducciones, talleres). Divide por el número de personas.\n\n¿Dónde encuentras el dato?\nRegistro de capacitaciones o OTEC.`),
+    kpiPromedio('Horas de capacitación por persona', 'horas', 4, false, 'Total horas de capacitación', 'Número de personas', `¿Para qué sirve?\nEquipos que se capacitan cometen menos errores y tienen más compromiso.\n\n¿Cómo lo calculas?\nSuma todas las horas de capacitación del mes (cursos, inducciones, talleres). Divide por el número de personas.\n\n¿Dónde encuentras el dato?\nRegistro de capacitaciones o OTEC.`),
   ],
   'Servicio Técnico': [
     kpiRatio('Primera solución en terreno', 'porcentaje', 80, false, 'Trabajos resueltos en primera visita', 'Total trabajos', `¿Para qué sirve?\nVolver a atender un trabajo ya cobrado tiene costo doble: tiempo técnico y transporte. La meta es resolverlo en la primera visita.\n\n¿Cómo lo calculas?\nDe todos los trabajos del mes, cuántos se resolvieron sin necesidad de una segunda visita.\n\n¿Dónde encuentras el dato?\nRegistro de órdenes de trabajo.`),
-    kpiDirecto('Tiempo de respuesta técnica', 'horas', 8, true, `¿Para qué sirve?\nUn cliente con equipo caído pierde plata cada hora que espera. Tu tiempo de respuesta define si vuelven a llamarte.\n\n¿Cómo lo calculas?\nRegistra hora de la solicitud y hora de llegada del técnico. Promedia.\n\n¿Dónde encuentras el dato?\nRegistro de órdenes de servicio.`),
-    kpiDirecto('Satisfacción del cliente (NPS)', 'numero', 8, false, `¿Para qué sirve?\nUn NPS bajo predice pérdida de clientes antes de que se vayan. Te da tiempo de corregir.\n\n¿Cómo lo calculas?\nEnvía una encuesta simple post-servicio: "¿Del 1 al 10, cuánto nos recomendarías?" Promedia las respuestas.\n\n¿Dónde encuentras el dato?\nEncuesta por WhatsApp o formulario simple.`),
+    kpiPromedio('Tiempo de respuesta técnica', 'horas', 8, true, 'Suma de horas de respuesta (solicitudes del mes)', 'Número de solicitudes atendidas', `¿Para qué sirve?\nUn cliente con equipo caído pierde plata cada hora que espera. Tu tiempo de respuesta define si vuelven a llamarte.\n\n¿Cómo lo calculas?\nRegistra hora de la solicitud y hora de llegada del técnico en cada caso. Suma esas horas y divide por el número de solicitudes.\n\n¿Dónde encuentras el dato?\nRegistro de órdenes de servicio.`),
+    kpiPromedio('Satisfacción del cliente (NPS)', 'numero', 8, false, 'Suma de calificaciones recibidas', 'Número de encuestas respondidas', `¿Para qué sirve?\nUn NPS bajo predice pérdida de clientes antes de que se vayan. Te da tiempo de corregir.\n\n¿Cómo lo calculas?\nEnvía una encuesta simple post-servicio: "¿Del 1 al 10, cuánto nos recomendarías?" Suma las calificaciones recibidas y divide por el número de encuestas respondidas.\n\n¿Dónde encuentras el dato?\nEncuesta por WhatsApp o formulario simple.`),
     kpiDirecto('Equipos en garantía activa', 'numero', 0, true, `¿Para qué sirve?\nCada equipo en garantía con problema es un costo directo y un cliente insatisfecho. La meta es cero.\n\n¿Cómo lo calculas?\nRegistra los trabajos que volvieron dentro del período de garantía con falla relacionada.\n\n¿Dónde encuentras el dato?\nRegistro de garantías o libro de servicio técnico.`),
   ],
 }
@@ -274,7 +312,7 @@ export default function KPIsPage() {
   function toggleEditar(kpi: KPI) {
     if (editando === kpi.id) { setEditando(null); return }
     setEditando(kpi.id)
-    if (kpi.formula.tipo === 'ratio') {
+    if (kpi.formula.tipo !== 'directo') {
       setEditValues({
         a: kpi.insumo_a !== null && kpi.insumo_a !== undefined ? String(kpi.insumo_a) : '',
         b: kpi.insumo_b !== null && kpi.insumo_b !== undefined ? String(kpi.insumo_b) : '',
@@ -285,9 +323,9 @@ export default function KPIsPage() {
     }
   }
 
-  async function guardarRatio(kpi: KPI, a: number, b: number) {
-    if (isNaN(a) || isNaN(b) || b === 0) return
-    const resultado = calcularRatio(a, b, kpi.unidad === 'porcentaje')
+  async function guardarConComponentes(kpi: KPI, a: number, b: number) {
+    if (isNaN(a) || isNaN(b) || denominadorInvalido(kpi.formula, a, b)) return
+    const resultado = calcularFormula(kpi.formula, a, b)
     if (resultado === null) return
     setSaving(true)
     const { error } = await supabase.from('kpis_empresa').update({ actual: resultado, insumo_a: a, insumo_b: b }).eq('id', kpi.id)
@@ -493,9 +531,10 @@ export default function KPIsPage() {
                     const enEdicion = editando === kpi.id
                     const aNum = parseFloat(editValues.a)
                     const bNum = parseFloat(editValues.b)
-                    const denominadorCero = enEdicion && kpi.formula.tipo === 'ratio' && editValues.b.trim() !== '' && bNum === 0
-                    const resultadoPreview = enEdicion && kpi.formula.tipo === 'ratio' && !isNaN(aNum) && !isNaN(bNum) && bNum !== 0
-                      ? calcularRatio(aNum, bNum, kpi.unidad === 'porcentaje')
+                    const tieneComponentes = kpi.formula.tipo !== 'directo'
+                    const denominadorCero = enEdicion && divisorEsCero(kpi.formula, editValues.a, editValues.b, aNum, bNum)
+                    const resultadoPreview = enEdicion && tieneComponentes && !isNaN(aNum) && !isNaN(bNum) && !denominadorInvalido(kpi.formula, aNum, bNum)
+                      ? calcularFormula(kpi.formula, aNum, bNum)
                       : null
                     const textoFormula = formulaTexto(kpi)
                     return (
@@ -538,7 +577,7 @@ export default function KPIsPage() {
                             </div>
                           </div>
                         </div>
-                        {enEdicion && kpi.formula.tipo === 'ratio' && (
+                        {enEdicion && tieneComponentes && kpi.formula.tipo !== 'directo' && (
                           <div className="edit-inline">
                             <div className="campo-mini">
                               <label>{kpi.formula.componenteA}</label>
@@ -563,7 +602,7 @@ export default function KPIsPage() {
                                   ? <span>= {formatVal(kpi, resultadoPreview)}</span>
                                   : <span style={{color:'var(--txt-2)'}}>Ingresa ambos valores</span>}
                             </div>
-                            <button className="btn-save" disabled={resultadoPreview === null} onClick={() => guardarRatio(kpi, aNum, bNum)}>
+                            <button className="btn-save" disabled={resultadoPreview === null} onClick={() => guardarConComponentes(kpi, aNum, bNum)}>
                               Guardar
                             </button>
                           </div>
