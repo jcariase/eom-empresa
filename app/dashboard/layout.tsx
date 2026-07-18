@@ -24,7 +24,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       if (estado === 'pendiente') redirect('/cuenta-pendiente')
       if (estado === 'vencido') redirect('/plan-vencido')
-      if (estado === 'piloto' && diasRestantes !== null && diasRestantes <= 15) {
+      if (estado === 'piloto' && diasRestantes !== null) {
         mostrarBanner = diasRestantes
       }
     }

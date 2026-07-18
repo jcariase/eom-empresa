@@ -140,12 +140,11 @@ export default function ConfiguracionPage() {
   if (loading) return <div style={{minHeight:'100vh',background:'#07090E',display:'flex',alignItems:'center',justifyContent:'center',color:'#5A6888',fontFamily:'DM Sans,sans-serif',fontSize:'13px'}}>Cargando configuración...</div>
 
   async function reiniciarCuenta() {
-    if (!window.confirm('Esto elimina diagnóstico, plan, KPIs, reuniones, problemas, mediciones y revisiones. La cuenta vuelve al onboarding como cliente nuevo. ¿Continuar?')) return
+    if (!window.confirm('Esto elimina diagnóstico, plan, KPIs, reuniones, problemas y revisiones. Tus mediciones mensuales quedan conservadas como historial. La cuenta vuelve al onboarding como cliente nuevo. ¿Continuar?')) return
     if (!window.confirm('Confirmación final: los datos no se pueden recuperar. ¿Eliminar todo?')) return
     setReiniciando(true)
     const {data:{user}} = await supabase.auth.getUser()
     if (!user) { setReiniciando(false); return }
-    const {data: emp} = await supabase.from('empresas_empresa').select('id').eq('user_id', user.id).single()
     await Promise.all([
       supabase.from('diagnosticos_empresa').delete().eq('user_id', user.id),
       supabase.from('plan_empresa').delete().eq('user_id', user.id),
@@ -153,7 +152,6 @@ export default function ConfiguracionPage() {
       supabase.from('problemas_empresa').delete().eq('user_id', user.id),
       supabase.from('reuniones_empresa').delete().eq('user_id', user.id),
       supabase.from('revisiones_empresa').delete().eq('user_id', user.id),
-      emp ? supabase.from('cierres_ciclo_empresa').delete().eq('empresa_id', emp.id) : Promise.resolve(),
     ])
     await supabase.from('empresas_empresa').update({
       onboarding_completo: false,

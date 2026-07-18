@@ -5,6 +5,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Sidebar from '../components/Sidebar'
+import { hoyChile, primerDiaMes, formatoISO } from '@/lib/fecha'
 
 function getEstado(score: number) {
   if (score <= 35) return {nombre:'Modo Bombero',color:'#EF4444'}
@@ -21,6 +22,7 @@ function DashboardContent() {
   const forzarCicloCumplido = searchParams.get('test_ciclo_cumplido') === 'true'
   const [empresa, setEmpresa] = useState<any>(null)
   const [diagnostico, setDiagnostico] = useState<any>(null)
+  const [tieneMedicionMes, setTieneMedicionMes] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -30,8 +32,11 @@ function DashboardContent() {
       const {data:emp} = await supabase.from('empresas_empresa').select('*').eq('user_id',user.id).single()
       if (!emp || !emp.onboarding_completo) { router.push('/onboarding'); return }
       const {data:diag} = await supabase.from('diagnosticos_empresa').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).single()
+      const periodoActualISO = formatoISO(primerDiaMes(hoyChile()))
+      const {data:medActual} = await supabase.from('mediciones_empresa').select('id').eq('empresa_id',emp.id).eq('periodo',periodoActualISO).maybeSingle()
       setEmpresa(emp)
       setDiagnostico(diag)
+      setTieneMedicionMes(!!medActual)
       setLoading(false)
     }
     load()
@@ -187,6 +192,17 @@ function DashboardContent() {
               </div>
             )
           })()}
+
+          {/* Aviso de medición mensual pendiente */}
+          {diasCiclo >= 55 && tieneMedicionMes === false && (
+            <div className="ciclo-card">
+              <div className="ciclo-info">
+                <div className="ciclo-label">Medición mensual pendiente</div>
+                <div className="ciclo-title">Quedan {Math.max(0, 60 - diasCiclo)} días para la medición del ciclo</div>
+                <div className="ciclo-sub">Registra los números del último mes cerrado en Cierre de ciclo.</div>
+              </div>
+            </div>
+          )}
 
           {/* KPIs financieros */}
           <div className="section-title">Resultado operacional — baseline del ciclo</div>

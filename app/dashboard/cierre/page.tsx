@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Sidebar from '../../components/Sidebar'
+import { hoyChile, primerDiaMes, formatoISO, fechaLocalDesdeISO, labelMes } from '@/lib/fecha'
 
 function fmt(n: number) { return n.toLocaleString('es-CL') }
 
@@ -20,30 +21,43 @@ function fmtInput(s: string): string {
 }
 
 const CAMPOS = [
-  { key: 'ingresos_mensual', base: 'base_ingresos', label: 'Ingresos del mes', mejorSi: 'sube' },
-  { key: 'costo_directo_mensual', base: 'base_costo_directo', label: 'Costo directo del mes', mejorSi: 'baja' },
-  { key: 'gastos_fijos_mensual', base: 'base_gastos_fijos', label: 'Gastos fijos del mes', mejorSi: 'baja' },
-  { key: 'retiro_dueno_mensual', base: 'base_retiro_dueno', label: 'Retiro del dueño', mejorSi: 'neutro' },
-  { key: 'clientes_activos', base: 'base_clientes', label: 'Clientes activos', mejorSi: 'sube' },
+  { key: 'ingresos', empresaKey: 'ingresos_mensual', label: 'Ingresos del mes', mejorSi: 'sube' },
+  { key: 'costo_directo', empresaKey: 'costo_directo_mensual', label: 'Costo directo del mes', mejorSi: 'baja' },
+  { key: 'gastos_fijos', empresaKey: 'gastos_fijos_mensual', label: 'Gastos fijos del mes', mejorSi: 'baja' },
+  { key: 'retiro_dueno', empresaKey: 'retiro_dueno_mensual', label: 'Retiro del dueño', mejorSi: 'neutro' },
+  { key: 'clientes_activos', empresaKey: 'clientes_activos', label: 'Clientes activos', mejorSi: 'sube' },
 ] as const
 
-function deriv(ing: number, cd: number, gf: number, ret: number) {
-  const margen = ing - cd
-  const resultadoOp = margen - gf
-  const resultadoReal = resultadoOp - ret
+type Medicion = {
+  id: string
+  empresa_id: string
+  ciclo_numero: number
+  periodo: string
+  ingresos: number
+  costo_directo: number
+  gastos_fijos: number
+  retiro_dueno: number
+  clientes_activos: number
+  es_baseline: boolean
+  comentario: string | null
+}
+
+function deriv(m: { ingresos: number; costo_directo: number; gastos_fijos: number; retiro_dueno: number }) {
+  const margen = m.ingresos - m.costo_directo
+  const resultadoOp = margen - m.gastos_fijos
+  const resultadoReal = resultadoOp - m.retiro_dueno
   return { margen, resultadoOp, resultadoReal }
 }
 
 export default function CierreCicloPage() {
   const router = useRouter()
   const [empresa, setEmpresa] = useState<any>(null)
-  const [cierres, setCierres] = useState<any[]>([])
+  const [mediciones, setMediciones] = useState<Medicion[]>([])
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState<Record<string, string>>({
-    ingresos_mensual: '', costo_directo_mensual: '', gastos_fijos_mensual: '',
-    retiro_dueno_mensual: '', clientes_activos: '',
+    ingresos: '', costo_directo: '', gastos_fijos: '', retiro_dueno: '', clientes_activos: '',
   })
   const [comentario, setComentario] = useState('')
 
@@ -52,25 +66,43 @@ export default function CierreCicloPage() {
     if (!user) { router.push('/auth'); return }
     const { data: emp } = await supabase.from('empresas_empresa').select('*').eq('user_id', user.id).single()
     if (!emp || !emp.onboarding_completo) { router.push('/onboarding'); return }
-    const { data: cs } = await supabase.from('cierres_ciclo_empresa')
-      .select('*').eq('empresa_id', emp.id).order('ciclo_numero', { ascending: true })
+    const { data: meds } = await supabase.from('mediciones_empresa')
+      .select('*').eq('empresa_id', emp.id).order('periodo', { ascending: true })
     setEmpresa(emp)
-    setCierres(cs || [])
+    setMediciones(meds || [])
     setLoading(false)
   }
 
   useEffect(() => { cargar() }, [])
+
+  const periodoActualDate = primerDiaMes(hoyChile())
+  const periodoActualISO = formatoISO(periodoActualDate)
+  const medicionMes = mediciones.find(m => m.periodo === periodoActualISO)
+
+  useEffect(() => {
+    if (!empresa) return
+    if (medicionMes && !medicionMes.es_baseline) {
+      setForm({
+        ingresos: fmt(medicionMes.ingresos),
+        costo_directo: fmt(medicionMes.costo_directo),
+        gastos_fijos: fmt(medicionMes.gastos_fijos),
+        retiro_dueno: fmt(medicionMes.retiro_dueno),
+        clientes_activos: fmt(medicionMes.clientes_activos),
+      })
+      setComentario(medicionMes.comentario || '')
+    } else {
+      setForm({ ingresos: '', costo_directo: '', gastos_fijos: '', retiro_dueno: '', clientes_activos: '' })
+      setComentario('')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresa, mediciones.length, medicionMes?.id])
 
   if (loading) return <div style={{ minHeight: '100vh', background: '#07090E', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5A6888', fontFamily: 'DM Sans,sans-serif', fontSize: '13px' }}>Cargando...</div>
   if (!empresa) return null
 
   const cicloActual = empresa.ciclo_numero || 1
   const diasCiclo = empresa.ciclo_inicio ? Math.floor((Date.now() - new Date(empresa.ciclo_inicio).getTime()) / (1000 * 60 * 60 * 24)) : 0
-  const cierreActual = cierres.find(c => c.ciclo_numero === cicloActual)
 
-  // Fuente única de verdad: la base del ciclo vigente vive en empresas_empresa
-  // (editable en Configuración). Al iniciar un ciclo nuevo, la medición anterior
-  // se copia automáticamente como nueva base.
   const baseCiclo = {
     ingresos_mensual: empresa.ingresos_mensual || 0,
     costo_directo_mensual: empresa.costo_directo_mensual || 0,
@@ -79,15 +111,9 @@ export default function CierreCicloPage() {
     clientes_activos: empresa.clientes_activos || 0,
   }
 
-  // Día 0: la base congelada del primer cierre, o el onboarding si aún no hay cierres
-  const primerCierre = cierres[0]
-  const dia0 = primerCierre ? {
-    ingresos_mensual: primerCierre.base_ingresos,
-    costo_directo_mensual: primerCierre.base_costo_directo,
-    gastos_fijos_mensual: primerCierre.base_gastos_fijos,
-    retiro_dueno_mensual: primerCierre.base_retiro_dueno,
-    clientes_activos: primerCierre.base_clientes,
-  } : baseCiclo
+  const baselineRow = mediciones.find(m => m.es_baseline)
+  const medicionesMensuales = mediciones.filter(m => !m.es_baseline)
+  const ultimaMedicion = medicionesMensuales[medicionesMensuales.length - 1]
 
   async function guardar() {
     setError('')
@@ -97,33 +123,32 @@ export default function CierreCicloPage() {
       vals[c.key] = parseCLP(form[c.key])
     }
     setGuardando(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    const { error: err } = await supabase.from('cierres_ciclo_empresa').insert({
-      user_id: user!.id,
+    const payload = {
       empresa_id: empresa.id,
       ciclo_numero: cicloActual,
-      dia_ciclo: diasCiclo,
-      ingresos_mensual: vals.ingresos_mensual,
-      costo_directo_mensual: vals.costo_directo_mensual,
-      gastos_fijos_mensual: vals.gastos_fijos_mensual,
-      retiro_dueno_mensual: vals.retiro_dueno_mensual,
+      periodo: periodoActualISO,
+      ingresos: vals.ingresos,
+      costo_directo: vals.costo_directo,
+      gastos_fijos: vals.gastos_fijos,
+      retiro_dueno: vals.retiro_dueno,
       clientes_activos: vals.clientes_activos,
-      base_ingresos: baseCiclo.ingresos_mensual,
-      base_costo_directo: baseCiclo.costo_directo_mensual,
-      base_gastos_fijos: baseCiclo.gastos_fijos_mensual,
-      base_retiro_dueno: baseCiclo.retiro_dueno_mensual,
-      base_clientes: baseCiclo.clientes_activos,
-      ciclo_inicio: empresa.ciclo_inicio ? new Date(empresa.ciclo_inicio).toISOString().slice(0, 10) : null,
       comentario: comentario.trim() || null,
-    })
-    setGuardando(false)
-    if (err) { setError('No se pudo guardar la medición. Intenta de nuevo.'); return }
-    setForm({ ingresos_mensual: '', costo_directo_mensual: '', gastos_fijos_mensual: '', retiro_dueno_mensual: '', clientes_activos: '' })
-    setComentario('')
+    }
+    if (medicionMes) {
+      const { data, error: err } = await supabase.from('mediciones_empresa')
+        .update(payload).eq('id', medicionMes.id).select()
+      setGuardando(false)
+      if (err || !data || data.length === 0) { setError('No se pudo guardar: este período ya no es editable.'); return }
+    } else {
+      const { error: err } = await supabase.from('mediciones_empresa').insert(payload)
+      setGuardando(false)
+      if (err) { setError('No se pudo guardar la medición. Intenta de nuevo.'); return }
+    }
     cargar()
   }
 
   async function iniciarSiguienteCiclo() {
+    if (!ultimaMedicion) return
     setGuardando(true)
     // Ancla contable: el ciclo parte el dia 1 del mes. Hasta el dia 5 hay
     // gracia (parte retroactivo al 1 de este mes); despues, el 1 del mes siguiente.
@@ -135,24 +160,16 @@ export default function CierreCicloPage() {
       .update({
         ciclo_inicio: inicio.toISOString(),
         ciclo_numero: cicloActual + 1,
-        // La medición del ciclo que termina pasa a ser la base del que comienza
-        ingresos_mensual: cierreActual.ingresos_mensual,
-        costo_directo_mensual: cierreActual.costo_directo_mensual,
-        gastos_fijos_mensual: cierreActual.gastos_fijos_mensual,
-        retiro_dueno_mensual: cierreActual.retiro_dueno_mensual,
-        clientes_activos: cierreActual.clientes_activos,
+        // La medición más reciente pasa a ser la base del ciclo que comienza
+        ingresos_mensual: ultimaMedicion.ingresos,
+        costo_directo_mensual: ultimaMedicion.costo_directo,
+        gastos_fijos_mensual: ultimaMedicion.gastos_fijos,
+        retiro_dueno_mensual: ultimaMedicion.retiro_dueno,
+        clientes_activos: ultimaMedicion.clientes_activos,
       })
       .eq('id', empresa.id)
     setGuardando(false)
     if (err) { setError('No se pudo iniciar el nuevo ciclo.'); return }
-    cargar()
-  }
-
-  async function borrarCierre(id: string) {
-    if (!window.confirm('¿Eliminar esta medición? Esta acción no se puede deshacer.')) return
-    const { error: err } = await supabase.from('cierres_ciclo_empresa').delete().eq('id', id)
-    if (err) { setError('No se pudo eliminar la medición.'); return }
-    setError('')
     cargar()
   }
 
@@ -165,43 +182,6 @@ export default function CierreCicloPage() {
       <span className={`delta ${positivo ? 'bien' : 'mal'}`}>
         {d > 0 ? '+' : '−'}{fmt(Math.abs(d))}{pct !== null ? ` (${d > 0 ? '+' : '−'}${pct}%)` : ''}
       </span>
-    )
-  }
-
-  function TablaComparacion({ titulo, base, badge }: { titulo: string, base: Record<string, number>, badge?: string }) {
-    const c = cierreActual
-    const dA = deriv(c.ingresos_mensual, c.costo_directo_mensual, c.gastos_fijos_mensual, c.retiro_dueno_mensual)
-    const dB = deriv(base.ingresos_mensual, base.costo_directo_mensual, base.gastos_fijos_mensual, base.retiro_dueno_mensual)
-    return (
-      <div className="form-card">
-        <div className="rep-header">
-          <div className="form-title" style={{ border: 'none', padding: 0, margin: 0 }}>{titulo}</div>
-          {badge && <div className="rep-badge">{badge}</div>}
-        </div>
-        <table className="rep">
-          <thead>
-            <tr><th>Indicador</th><th>Antes</th><th>Día 60</th><th>Variación</th></tr>
-          </thead>
-          <tbody>
-            {CAMPOS.map(campo => {
-              const actual = c[campo.key]
-              const b = base[campo.key]
-              const esClientes = campo.key === 'clientes_activos'
-              return (
-                <tr key={campo.key}>
-                  <td>{campo.label}</td>
-                  <td>{esClientes ? fmt(b) : '$' + fmt(b)}</td>
-                  <td>{esClientes ? fmt(actual) : '$' + fmt(actual)}</td>
-                  <td><Delta actual={actual} base={b} mejorSi={campo.mejorSi} /></td>
-                </tr>
-              )
-            })}
-            <tr className="derivado"><td>Margen</td><td>${fmt(dB.margen)}</td><td>${fmt(dA.margen)}</td><td><Delta actual={dA.margen} base={dB.margen} mejorSi="sube" /></td></tr>
-            <tr className="derivado"><td>Resultado operacional</td><td>${fmt(dB.resultadoOp)}</td><td>${fmt(dA.resultadoOp)}</td><td><Delta actual={dA.resultadoOp} base={dB.resultadoOp} mejorSi="sube" /></td></tr>
-            <tr className="derivado"><td>Resultado real (post retiro)</td><td>${fmt(dB.resultadoReal)}</td><td>${fmt(dA.resultadoReal)}</td><td><Delta actual={dA.resultadoReal} base={dB.resultadoReal} mejorSi="sube" /></td></tr>
-          </tbody>
-        </table>
-      </div>
     )
   }
 
@@ -218,7 +198,6 @@ export default function CierreCicloPage() {
         .aviso{background:var(--surf-2);border:1px solid var(--brd);border-left:2px solid var(--amber);padding:24px;margin-bottom:24px}
         .aviso-title{font-size:15px;font-weight:500;color:var(--txt-1);margin-bottom:6px}
         .aviso-sub{font-size:13px;color:var(--txt-3);line-height:1.6}
-        .aviso-dias{font-family:'Playfair Display',serif;font-size:40px;color:var(--amber);line-height:1;margin-bottom:8px}
         .form-card{background:var(--surf-2);border:1px solid var(--brd);padding:28px;margin-bottom:24px}
         .form-title{font-size:13px;font-weight:500;color:var(--txt-1);margin-bottom:6px;padding-bottom:10px;border-bottom:1px solid var(--brd)}
         .form-hint{font-size:12px;color:var(--txt-2);margin-bottom:20px;margin-top:8px;line-height:1.6}
@@ -232,7 +211,6 @@ export default function CierreCicloPage() {
         .btn-guardar:disabled{opacity:0.5;cursor:not-allowed}
         .btn-secundario{background:none;border:1px solid var(--amber);color:var(--amber);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:12px 28px;cursor:pointer}
         .error-msg{color:#EF4444;font-size:13px;margin-top:12px}
-        .btn-borrar{background:none;border:1px solid var(--brd-2);color:#EF4444;font-size:12px;padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif}
         .rep-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
         .rep-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);border:1px solid var(--amber-border,rgba(217,119,6,0.3));padding:4px 10px}
         table.rep{width:100%;border-collapse:collapse}
@@ -246,10 +224,8 @@ export default function CierreCicloPage() {
         .delta.mal{color:#EF4444}
         .delta.neutro{color:var(--txt-2)}
         .rep-comentario{background:var(--surf-3);border:1px solid var(--brd);padding:16px;font-size:13px;color:var(--txt-3);line-height:1.6;margin-bottom:24px}
-        .hist-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--brd);font-size:13px}
-        .hist-row:last-child{border-bottom:none}
-        .hist-ciclo{font-family:'DM Mono',monospace;font-size:11px;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.08em}
-        .hist-val{font-family:'DM Mono',monospace;font-size:13px}
+        .badge-baseline{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--amber);border:1px solid var(--amber-border,rgba(217,119,6,0.3));padding:2px 8px;margin-left:8px}
+        .tabla-scroll{overflow-x:auto}
         .ciclo-fin{background:var(--surf-2);border:1px solid var(--brd);border-left:2px solid #16A34A;padding:24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
         @media(max-width:768px){.layout{grid-template-columns:1fr}.main{padding:20px 16px}}
       `}</style>
@@ -261,13 +237,13 @@ export default function CierreCicloPage() {
           <div className="page-title">Cierre de ciclo</div>
           <div className="page-sub">Ciclo {cicloActual} · Día {diasCiclo} · {empresa.nombre}</div>
 
-          {/* Fin de ciclo: al día 90 con medición hecha, ofrecer arranque del siguiente */}
-          {cierreActual && diasCiclo >= 90 && (
+          {/* Fin de ciclo: al día 90 con al menos una medición mensual, ofrecer arranque del siguiente */}
+          {ultimaMedicion && diasCiclo >= 90 && (
             <div className="ciclo-fin">
               <div>
                 <div className="aviso-title">Ciclo {cicloActual} completado</div>
                 <div className="aviso-sub">
-                  La medición de este ciclo será la línea base del siguiente.
+                  Tu última medición mensual será la línea base del siguiente ciclo.
                   Al iniciar el ciclo {cicloActual + 1} parte un nuevo período de 90 días.
                 </div>
               </div>
@@ -277,62 +253,25 @@ export default function CierreCicloPage() {
             </div>
           )}
 
-          {cierreActual ? (
-            <>
-              <TablaComparacion
-                titulo={`Este ciclo: inicio vs día 60`}
-                base={{
-                  ingresos_mensual: cierreActual.base_ingresos,
-                  costo_directo_mensual: cierreActual.base_costo_directo,
-                  gastos_fijos_mensual: cierreActual.base_gastos_fijos,
-                  retiro_dueno_mensual: cierreActual.base_retiro_dueno,
-                  clientes_activos: cierreActual.base_clientes,
-                }}
-                badge={`Medición día ${cierreActual.dia_ciclo} · ${new Date(cierreActual.fecha + 'T12:00:00').toLocaleDateString('es-CL')}`}
-              />
-
-              {cicloActual > 1 && (
-                <TablaComparacion
-                  titulo="Avance total: desde tu llegada a EOM"
-                  base={dia0}
-                  badge={`${cicloActual} ciclos`}
-                />
-              )}
-
-              {cierreActual.comentario && <div className="rep-comentario">{cierreActual.comentario}</div>}
-              <button className="btn-borrar" onClick={() => borrarCierre(cierreActual.id)}>Eliminar esta medición</button>
-            </>
-          ) : diasCiclo < 0 ? (
+          {/* (a) Formulario del mes a registrar */}
+          {medicionMes && medicionMes.es_baseline ? (
             <div className="aviso">
-              <div className="aviso-dias">{Math.abs(diasCiclo)}</div>
-              <div className="aviso-title">Días para el inicio del ciclo {cicloActual}</div>
+              <div className="aviso-title">{labelMes(periodoActualDate)} es tu mes de línea base</div>
               <div className="aviso-sub">
-                El ciclo parte el {new Date(empresa.ciclo_inicio).toLocaleDateString('es-CL')},
-                alineado con el mes contable. Usa estos días para dejar listo el Plan 90 días.
-              </div>
-            </div>
-          ) : diasCiclo < 60 ? (
-            <div className="aviso">
-              <div className="aviso-dias">{60 - diasCiclo}</div>
-              <div className="aviso-title">Días para la medición del ciclo {cicloActual}</div>
-              <div className="aviso-sub">
-                La medición se habilita al día 60, con dos meses contables cerrados.
-                Ese día capturas los mismos 5 números con los que partió el ciclo y la
-                plataforma genera tu comparación. Los días 60 a 90 son para corregir
-                y planificar el ciclo siguiente. Recuerda: los resultados financieros
-                maduran en 2 a 3 ciclos; el primer ciclo se gana con disciplina operacional.
+                Este período quedó registrado como el punto de partida de tu ciclo.
+                Tu primer registro mensual estará disponible el próximo mes.
               </div>
             </div>
           ) : (
             <div className="form-card">
-              <div className="form-title">Medición del ciclo {cicloActual} · día {diasCiclo}</div>
+              <div className="form-title">Medición de {labelMes(periodoActualDate)}</div>
               <div className="form-hint">
                 Ingresa los valores reales del último mes cerrado. A la derecha de cada campo
                 ves el punto de partida de este ciclo. Formato en pesos chilenos, sin decimales.
               </div>
               {CAMPOS.map(c => {
                 const esClientes = c.key === 'clientes_activos'
-                const baseVal = (baseCiclo as any)[c.key] || 0
+                const baseVal = (baseCiclo as any)[c.empresaKey] || 0
                 return (
                   <div className="campo" key={c.key}>
                     <div className="campo-label">
@@ -350,38 +289,97 @@ export default function CierreCicloPage() {
                 )
               })}
               <div className="campo">
-                <div className="campo-label"><span>Comentario del ciclo (opcional)</span></div>
+                <div className="campo-label"><span>Comentario del mes (opcional)</span></div>
                 <textarea
-                  placeholder="Qué funcionó, qué no, y qué aprendiste este ciclo"
+                  placeholder="Qué funcionó, qué no, y qué aprendiste este mes"
                   value={comentario}
                   onChange={e => setComentario(e.target.value)}
                 />
               </div>
               <button className="btn-guardar" onClick={guardar} disabled={guardando}>
-                {guardando ? 'Guardando...' : 'Guardar medición y generar reporte'}
+                {guardando ? 'Guardando...' : medicionMes ? 'Actualizar medición' : 'Guardar medición'}
               </button>
               {error && <div className="error-msg">{error}</div>}
             </div>
           )}
 
-          {/* Historial de ciclos anteriores */}
-          {cierres.filter(c => c.ciclo_numero !== cicloActual).length > 0 && (
+          {/* (b) Tabla de evolución */}
+          {mediciones.length > 0 && (
             <div className="form-card">
-              <div className="form-title">Historial de ciclos</div>
-              {cierres.filter(c => c.ciclo_numero !== cicloActual).map(c => {
-                const d = deriv(c.ingresos_mensual, c.costo_directo_mensual, c.gastos_fijos_mensual, c.retiro_dueno_mensual)
-                return (
-                  <div className="hist-row" key={c.id}>
-                    <span className="hist-ciclo">Ciclo {c.ciclo_numero} · {(() => {
-                      const desde = c.ciclo_inicio ? new Date(c.ciclo_inicio + 'T12:00:00') : new Date(new Date(c.fecha + 'T12:00:00').getTime() - (c.dia_ciclo || 0) * 86400000)
-                      const hasta = new Date(desde.getTime() + 90 * 86400000)
-                      return desde.toLocaleDateString('es-CL') + ' al ' + hasta.toLocaleDateString('es-CL')
-                    })()}</span>
-                    <span className="hist-val">Ingresos ${fmt(c.ingresos_mensual)} · Resultado real ${fmt(d.resultadoReal)}</span>
-                    <button className="btn-borrar" onClick={() => borrarCierre(c.id)}>Eliminar</button>
-                  </div>
-                )
-              })}
+              <div className="form-title">Evolución mensual</div>
+              <div className="tabla-scroll">
+                <table className="rep">
+                  <thead>
+                    <tr><th>Mes</th><th>Ingresos</th><th>Costo directo</th><th>Gastos fijos</th><th>Retiro dueño</th><th>Clientes</th><th>Resultado real</th></tr>
+                  </thead>
+                  <tbody>
+                    {mediciones.map(m => {
+                      const d = deriv(m)
+                      return (
+                        <tr key={m.id}>
+                          <td>{labelMes(fechaLocalDesdeISO(m.periodo))}{m.es_baseline && <span className="badge-baseline">Baseline</span>}</td>
+                          <td>${fmt(m.ingresos)}</td>
+                          <td>${fmt(m.costo_directo)}</td>
+                          <td>${fmt(m.gastos_fijos)}</td>
+                          <td>${fmt(m.retiro_dueno)}</td>
+                          <td>{fmt(m.clientes_activos)}</td>
+                          <td>${fmt(d.resultadoReal)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* (c) Comparativo baseline vs última medición */}
+          {baselineRow && (
+            <div className="form-card">
+              <div className="rep-header">
+                <div className="form-title" style={{ border: 'none', padding: 0, margin: 0 }}>Baseline vs última medición</div>
+                {ultimaMedicion && (
+                  <div className="rep-badge">{labelMes(fechaLocalDesdeISO(ultimaMedicion.periodo))}</div>
+                )}
+              </div>
+              {ultimaMedicion ? (
+                <div className="tabla-scroll">
+                  <table className="rep">
+                    <thead>
+                      <tr><th>Indicador</th><th>Baseline</th><th>Última medición</th><th>Variación</th></tr>
+                    </thead>
+                    <tbody>
+                      {CAMPOS.map(campo => {
+                        const actual = (ultimaMedicion as any)[campo.key]
+                        const b = (baselineRow as any)[campo.key]
+                        const esClientes = campo.key === 'clientes_activos'
+                        return (
+                          <tr key={campo.key}>
+                            <td>{campo.label}</td>
+                            <td>{esClientes ? fmt(b) : '$' + fmt(b)}</td>
+                            <td>{esClientes ? fmt(actual) : '$' + fmt(actual)}</td>
+                            <td><Delta actual={actual} base={b} mejorSi={campo.mejorSi} /></td>
+                          </tr>
+                        )
+                      })}
+                      {(() => {
+                        const dA = deriv(ultimaMedicion)
+                        const dB = deriv(baselineRow)
+                        return (
+                          <>
+                            <tr className="derivado"><td>Margen</td><td>${fmt(dB.margen)}</td><td>${fmt(dA.margen)}</td><td><Delta actual={dA.margen} base={dB.margen} mejorSi="sube" /></td></tr>
+                            <tr className="derivado"><td>Resultado operacional</td><td>${fmt(dB.resultadoOp)}</td><td>${fmt(dA.resultadoOp)}</td><td><Delta actual={dA.resultadoOp} base={dB.resultadoOp} mejorSi="sube" /></td></tr>
+                            <tr className="derivado"><td>Resultado real (post retiro)</td><td>${fmt(dB.resultadoReal)}</td><td>${fmt(dA.resultadoReal)}</td><td><Delta actual={dA.resultadoReal} base={dB.resultadoReal} mejorSi="sube" /></td></tr>
+                          </>
+                        )
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="aviso-sub">Aún no tienes una medición mensual registrada para comparar con tu línea base.</div>
+              )}
+              {ultimaMedicion?.comentario && <div className="rep-comentario" style={{ marginTop: 16, marginBottom: 0 }}>{ultimaMedicion.comentario}</div>}
             </div>
           )}
         </main>

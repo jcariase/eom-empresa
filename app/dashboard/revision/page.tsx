@@ -45,20 +45,29 @@ export default function RevisionPage() {
       const { data: emp } = await supabase.from('empresas_empresa').select('*').eq('user_id', user.id).single()
       if (!emp || !emp.onboarding_completo) { router.push('/onboarding'); return }
 
-      const [{ data: crits }, { data: kpis }, { data: reuniones }, { data: problemas }, { data: plan }, { data: cierres }, { data: revs }] = await Promise.all([
+      const [{ data: crits }, { data: kpis }, { data: reuniones }, { data: problemas }, { data: plan }, { data: mediciones }, { data: revs }] = await Promise.all([
         supabase.from('rubrica_criterios').select('*').eq('version', 1).eq('activo', true).order('dimension').order('orden'),
         supabase.from('kpis_empresa').select('*').eq('user_id', user.id),
         supabase.from('reuniones_empresa').select('*').eq('user_id', user.id),
         supabase.from('problemas_empresa').select('*').eq('user_id', user.id),
         supabase.from('plan_empresa').select('*').eq('user_id', user.id),
-        supabase.from('cierres_ciclo_empresa').select('*').eq('empresa_id', emp.id).order('ciclo_numero'),
+        supabase.from('mediciones_empresa').select('*').eq('empresa_id', emp.id).order('periodo'),
         supabase.from('revisiones_empresa').select('*').eq('empresa_id', emp.id).eq('estado', 'cerrada').order('created_at', { ascending: false }).limit(1),
       ])
+
+      // Proxy de "dia_ciclo": dias transcurridos desde el inicio del ciclo
+      // hasta que se registró la medición (antes vivía en cierres_ciclo_empresa.dia_ciclo).
+      const cierres = (mediciones || [])
+        .filter((m: any) => !m.es_baseline)
+        .map((m: any) => ({
+          ...m,
+          dia_ciclo: emp.ciclo_inicio ? Math.floor((new Date(m.created_at).getTime() - new Date(emp.ciclo_inicio).getTime()) / 86400000) : null,
+        }))
 
       setEmpresa(emp)
       setCriterios(crits || [])
       setUltimaRevision(revs?.[0] || null)
-      setAutoScores(calcularAutos(emp, kpis || [], reuniones || [], problemas || [], plan || [], cierres || []))
+      setAutoScores(calcularAutos(emp, kpis || [], reuniones || [], problemas || [], plan || [], cierres))
       setLoading(false)
     }
     load()

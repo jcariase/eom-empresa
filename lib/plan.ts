@@ -5,6 +5,8 @@ export type PlanStatus = {
   diasRestantes: number | null
 }
 
+import { hoyChile, fechaLocalDesdeISO, diffDias } from './fecha'
+
 type EmpresaPlan = {
   plan_activo?: boolean | null
   plan_vence?: string | null
@@ -13,18 +15,13 @@ type EmpresaPlan = {
 export const CONTACT_EMAIL = 'jc0904@gmail.com'
 export const EXCEPTION_EMAILS = ['jc0904@gmail.com', 'jarias@fen.uchile.cl']
 
-function hoyChile(): Date {
-  const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' })
-  return new Date(`${hoy}T00:00:00`)
-}
-
 export function getPlanStatus(empresa: EmpresaPlan): PlanStatus {
   if (empresa.plan_activo) return { estado: 'pagado', diasRestantes: null }
   if (!empresa.plan_vence) return { estado: 'pendiente', diasRestantes: null }
 
   const hoy = hoyChile()
-  const vence = new Date(`${empresa.plan_vence}T00:00:00`)
-  const diasRestantes = Math.round((vence.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+  const vence = fechaLocalDesdeISO(empresa.plan_vence)
+  const diasRestantes = diffDias(vence, hoy)
 
   if (diasRestantes < 0) return { estado: 'vencido', diasRestantes }
   return { estado: 'piloto', diasRestantes }
