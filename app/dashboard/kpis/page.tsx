@@ -420,10 +420,10 @@ export default function KPIsPage() {
                   <div className="area-card-accent" style={{background: color}} />
                   <div className="area-card-nombre">{area}</div>
                   <div className="area-card-score" style={{color: score !== null ? color : 'var(--txt-2)'}}>
-                    {score !== null ? `${score}%` : '—'}
+                    {kpisDeArea.length === 0 ? '—' : `${enMeta}/${kpisDeArea.length} en meta`}
                   </div>
                   <div className="area-card-sub">
-                    {kpisDeArea.length === 0 ? 'Sin KPIs' : `${enMeta}/${kpisDeArea.length} en meta`}
+                    {kpisDeArea.length === 0 ? 'Sin KPIs' : score !== null ? `${score}% cumplimiento` : 'Sin mediciones aún'}
                   </div>
                   <div className="area-bar">
                     <div className="area-bar-fill" style={{width: `${score || 0}%`, background: color}} />
@@ -522,7 +522,7 @@ export default function KPIsPage() {
                                 {kpi.actual > 0 ? formatVal(kpi, kpi.actual) : '—'}
                               </div>
                               <div className="kpi-meta-label">
-                                {kpi.actual > 0 ? `${pct}% · meta ${formatVal(kpi, kpi.meta)}` : `Meta: ${kpi.meta > 0 ? formatVal(kpi, kpi.meta) : 'sin definir'}`}
+                                {kpi.actual > 0 ? `Meta: ${formatVal(kpi, kpi.meta)} · Cumplimiento: ${pct}%` : `Meta: ${kpi.meta > 0 ? formatVal(kpi, kpi.meta) : 'sin definir'}`}
                               </div>
                             </div>
                             <div className="kpi-actions">
