@@ -18,6 +18,10 @@ export function primerDiaMes(fecha: Date): Date {
   return new Date(fecha.getFullYear(), fecha.getMonth(), 1)
 }
 
+export function sumarMeses(fecha: Date, n: number): Date {
+  return new Date(fecha.getFullYear(), fecha.getMonth() + n, 1)
+}
+
 export function formatoISO(fecha: Date): string {
   const y = fecha.getFullYear()
   const m = String(fecha.getMonth() + 1).padStart(2, '0')

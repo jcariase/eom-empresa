@@ -5,7 +5,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Sidebar from '../components/Sidebar'
-import { hoyChile, primerDiaMes, formatoISO } from '@/lib/fecha'
+import { calcularMesPendiente } from '@/lib/mediciones'
 
 function getEstado(score: number) {
   if (score <= 35) return {nombre:'Modo Bombero',color:'#EF4444'}
@@ -22,7 +22,7 @@ function DashboardContent() {
   const forzarCicloCumplido = searchParams.get('test_ciclo_cumplido') === 'true'
   const [empresa, setEmpresa] = useState<any>(null)
   const [diagnostico, setDiagnostico] = useState<any>(null)
-  const [tieneMedicionMes, setTieneMedicionMes] = useState<boolean | null>(null)
+  const [tieneMesPendiente, setTieneMesPendiente] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,11 +32,12 @@ function DashboardContent() {
       const {data:emp} = await supabase.from('empresas_empresa').select('*').eq('user_id',user.id).single()
       if (!emp || !emp.onboarding_completo) { router.push('/onboarding'); return }
       const {data:diag} = await supabase.from('diagnosticos_empresa').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).single()
-      const periodoActualISO = formatoISO(primerDiaMes(hoyChile()))
-      const {data:medActual} = await supabase.from('mediciones_empresa').select('id').eq('empresa_id',emp.id).eq('periodo',periodoActualISO).maybeSingle()
+      const {data:meds} = await supabase.from('mediciones_empresa').select('periodo,es_baseline').eq('empresa_id',emp.id)
+      const baseline = (meds || []).find(m => m.es_baseline)
+      const { pendiente } = calcularMesPendiente(baseline?.periodo, (meds || []).map(m => m.periodo))
       setEmpresa(emp)
       setDiagnostico(diag)
-      setTieneMedicionMes(!!medActual)
+      setTieneMesPendiente(pendiente !== null)
       setLoading(false)
     }
     load()
@@ -194,7 +195,7 @@ function DashboardContent() {
           })()}
 
           {/* Aviso de medición mensual pendiente */}
-          {diasCiclo >= 55 && tieneMedicionMes === false && (
+          {diasCiclo >= 55 && tieneMesPendiente === true && (
             <div className="ciclo-card">
               <div className="ciclo-info">
                 <div className="ciclo-label">Medición mensual pendiente</div>
