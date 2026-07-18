@@ -150,11 +150,11 @@ function getPct(kpi: KPI) {
 // confunde con el propio valor del KPI (también un %). En su lugar se
 // muestra la brecha en puntos contra la meta, que no tiene esa ambigüedad.
 function textoCumplimiento(kpi: KPI, pct: number): string {
-  if (kpi.unidad !== 'porcentaje') return `Cumplimiento: ${pct}%`
+  if (kpi.unidad !== 'porcentaje') return `cumplimiento ${pct}%`
   const metaSuperada = kpi.es_inverso ? kpi.actual <= kpi.meta : kpi.actual >= kpi.meta
-  if (metaSuperada) return 'Meta superada'
+  if (metaSuperada) return 'meta superada'
   const brecha = redondear(Math.abs(kpi.meta - kpi.actual), 1)
-  return `A ${brecha.toLocaleString('es-CL')} pts de la meta`
+  return `a ${brecha.toLocaleString('es-CL')} pts de la meta`
 }
 
 function formatVal(kpi: KPI, val: number) {
@@ -165,12 +165,6 @@ function formatVal(kpi: KPI, val: number) {
   if (kpi.unidad === 'dias') return `${n} días`
   if (kpi.unidad === 'horas') return `${n} hrs`
   return n
-}
-
-function getAreaScore(kpis: KPI[]) {
-  const conDato = kpis.filter(k => k.actual > 0 && k.meta > 0)
-  if (conDato.length === 0) return null
-  return Math.round(conDato.reduce((a, k) => a + getPct(k), 0) / conDato.length)
 }
 
 function getSemaforoColor(score: number | null) {
@@ -423,21 +417,21 @@ export default function KPIsPage() {
           <div className="areas-overview">
             {areas.map(area => {
               const kpisDeArea = kpis.filter(k => k.area === area)
-              const score = getAreaScore(kpisDeArea)
-              const color = getSemaforoColor(score)
               const enMeta = kpisDeArea.filter(k => k.actual > 0 && getColor(k) === '#16A34A').length
+              const pctEnMeta = kpisDeArea.length > 0 ? Math.round((enMeta / kpisDeArea.length) * 100) : null
+              const color = getSemaforoColor(pctEnMeta)
               return (
                 <div key={area} className={`area-card ${areaActiva === area ? 'active' : ''}`} onClick={() => setAreaActiva(area)}>
                   <div className="area-card-accent" style={{background: color}} />
                   <div className="area-card-nombre">{area}</div>
-                  <div className="area-card-score" style={{color: score !== null ? color : 'var(--txt-2)'}}>
+                  <div className="area-card-score" style={{color: pctEnMeta !== null ? color : 'var(--txt-2)'}}>
                     {kpisDeArea.length === 0 ? '—' : `${enMeta}/${kpisDeArea.length} en meta`}
                   </div>
                   <div className="area-card-sub">
-                    {kpisDeArea.length === 0 ? 'Sin KPIs' : score !== null ? `${score}% cumplimiento` : 'Sin mediciones aún'}
+                    {kpisDeArea.length === 0 ? 'Sin KPIs' : ''}
                   </div>
                   <div className="area-bar">
-                    <div className="area-bar-fill" style={{width: `${score || 0}%`, background: color}} />
+                    <div className="area-bar-fill" style={{width: `${pctEnMeta || 0}%`, background: color}} />
                   </div>
                 </div>
               )
@@ -533,7 +527,7 @@ export default function KPIsPage() {
                                 {kpi.actual > 0 ? formatVal(kpi, kpi.actual) : '—'}
                               </div>
                               <div className="kpi-meta-label">
-                                {kpi.actual > 0 ? `Meta: ${formatVal(kpi, kpi.meta)} · ${textoCumplimiento(kpi, pct)}` : `Meta: ${kpi.meta > 0 ? formatVal(kpi, kpi.meta) : 'sin definir'}`}
+                                {kpi.actual > 0 ? `${textoCumplimiento(kpi, pct)} · meta ${formatVal(kpi, kpi.meta)}` : `Meta: ${kpi.meta > 0 ? formatVal(kpi, kpi.meta) : 'sin definir'}`}
                               </div>
                             </div>
                             <div className="kpi-actions">
