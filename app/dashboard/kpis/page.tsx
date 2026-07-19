@@ -122,7 +122,7 @@ const BIBLIOTECA: Record<string, BibliotecaKPI[]> = {
     kpiDirecto('Ingresos por ventas', 'pesos', 0, false, `¿Para qué sirve?\nSin saber cuánto vendiste, no puedes saber si tu empresa crece o se encoge.\n\n¿Cómo lo calculas?\nSuma todas las facturas o boletas emitidas este mes.\n\n¿Dónde encuentras el dato?\nSistema de facturación electrónica del SII o libro de ventas.`),
     kpiRatio('Tasa de cierre de propuestas', 'porcentaje', 30, false, 'Propuestas aceptadas', 'Total propuestas enviadas', `¿Para qué sirve?\nMide la efectividad de tu equipo de ventas. Una tasa baja puede indicar problemas de precio, propuesta o seguimiento.\n\n¿Cómo lo calculas?\nCuenta cuántas propuestas enviadas este mes fueron aceptadas. Divide por el total enviado.\n\n¿Dónde encuentras el dato?\nRegistro de propuestas o CRM. Si no tienes, una planilla simple con fecha, cliente, estado.`),
     kpiDirecto('Nuevos clientes del mes', 'numero', 5, false, `¿Para qué sirve?\nMedir cuántos clientes nuevos entran cada mes te dice si tu empresa está creciendo o solo reteniendo.\n\n¿Cómo lo calculas?\nCuenta los clientes que compraron este mes y no compraron en los últimos 6 meses.\n\n¿Dónde encuentras el dato?\nHistorial de ventas o registro de clientes.`),
-    kpiPromedio('Ticket promedio', 'pesos', 0, false, 'Ingresos totales', 'Número de ventas del mes', `¿Para qué sirve?\nSaber cuánto gasta en promedio cada cliente te ayuda a identificar si estás vendiendo poco por venta o si puedes hacer upselling.\n\n¿Cómo lo calculas?\nDivide los ingresos totales del mes por el número de órdenes o ventas.\n\n¿Dónde encuentras el dato?\nLibro de ventas.`),
+    kpiPromedio('Ticket promedio', 'pesos', 1, false, 'Ingresos totales', 'Número de ventas del mes', `¿Para qué sirve?\nSaber cuánto gasta en promedio cada cliente te ayuda a identificar si estás vendiendo poco por venta o si puedes hacer upselling.\n\n¿Cómo lo calculas?\nDivide los ingresos totales del mes por el número de órdenes o ventas.\n\n¿Dónde encuentras el dato?\nLibro de ventas.`),
     kpiDirecto('Propuestas pendientes de respuesta', 'numero', 0, true, 'Cotizaciones enviadas que el cliente aún no contesta y nadie ha seguido.'),
     kpiRatio('Tasa de retención de clientes', 'porcentaje', 80, false, 'Clientes que repitieron compra', 'Clientes del mes anterior', `¿Para qué sirve?\nRetener un cliente cuesta 5x menos que conseguir uno nuevo. Una tasa de retención baja es una fuga silenciosa de dinero.\n\n¿Cómo lo calculas?\nDe los clientes que compraron el mes pasado, cuántos volvieron a comprar este mes.\n\n¿Dónde encuentras el dato?\nHistorial de ventas.`),
   ],
@@ -214,6 +214,26 @@ function getSemaforoColor(score: number | null) {
   return '#EF4444'
 }
 
+function parseNumCL(s: string): number {
+  const limpio = s.trim().replace(/\./g, '').replace(/,/g, '.')
+  if (limpio === '') return NaN
+  return Number(limpio)
+}
+
+function fmtInputNum(s: string): string {
+  const n = parseNumCL(s)
+  return isNaN(n) ? '' : n.toLocaleString('es-CL')
+}
+
+// Un ratio/margen/promedio con meta 0 no tiene sentido (el % de cumplimiento
+// se indefine). Los KPIs directos sí pueden apuntar a cero genuinamente
+// (quiebres de stock, reclamos de garantía).
+function metaValida(tipo: FormulaKPI['tipo'], valor: number): boolean {
+  if (isNaN(valor)) return false
+  if (tipo === 'directo') return valor >= 0
+  return valor > 0
+}
+
 export default function KPIsPage() {
   const router = useRouter()
   const [kpis, setKpis] = useState<KPI[]>([])
@@ -235,6 +255,13 @@ export default function KPIsPage() {
   const [formComponenteB, setFormComponenteB] = useState('')
   const [formDesc, setFormDesc] = useState('')
   const [formEsInverso, setFormEsInverso] = useState(false)
+  const [formMetaError, setFormMetaError] = useState('')
+  const [instalando, setInstalando] = useState<BibliotecaKPI | null>(null)
+  const [metaInstalar, setMetaInstalar] = useState('')
+  const [metaInstalarError, setMetaInstalarError] = useState('')
+  const [editandoMeta, setEditandoMeta] = useState<string | null>(null)
+  const [metaEditValue, setMetaEditValue] = useState('')
+  const [metaEditError, setMetaEditError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -267,24 +294,47 @@ export default function KPIsPage() {
     load()
   }, [router])
 
-  async function agregarDesdeBiblioteca(kpiBase: BibliotecaKPI) {
+  async function agregarDesdeBiblioteca(kpiBase: BibliotecaKPI, meta: number) {
     const {data: {user}} = await supabase.auth.getUser()
     if (!user || !areaActiva) return
     setSaving(true)
     const id = crypto.randomUUID()
     const { error } = await supabase.from('kpis_empresa').insert({
       id, user_id: user.id, nombre: kpiBase.nombre, area: areaActiva, unidad: kpiBase.unidad,
-      meta: kpiBase.meta, actual: 0, descripcion: kpiBase.descripcion, estandar: kpiBase.estandar,
+      meta, actual: 0, descripcion: kpiBase.descripcion, estandar: kpiBase.estandar,
       es_inverso: kpiBase.es_inverso, dim: serializeFormula(kpiBase.formula), insumo_a: null, insumo_b: null,
     })
     setSaving(false)
     if (error) return
-    setKpis(prev => [...prev, { ...kpiBase, id, actual: 0, area: areaActiva, insumo_a: null, insumo_b: null }])
+    setKpis(prev => [...prev, { ...kpiBase, id, meta, actual: 0, area: areaActiva, insumo_a: null, insumo_b: null }])
+  }
+
+  function abrirInstalar(k: BibliotecaKPI) {
+    setInstalando(k)
+    setMetaInstalar(k.meta.toLocaleString('es-CL'))
+    setMetaInstalarError('')
+  }
+
+  async function confirmarInstalar() {
+    if (!instalando) return
+    const meta = parseNumCL(metaInstalar)
+    if (!metaValida(instalando.formula.tipo, meta)) {
+      setMetaInstalarError(instalando.formula.tipo === 'directo' ? 'La meta debe ser un número mayor o igual a 0.' : 'La meta debe ser un número mayor que 0.')
+      return
+    }
+    await agregarDesdeBiblioteca(instalando, meta)
+    setInstalando(null)
+    setShowBiblioteca(false)
   }
 
   async function crearKPI() {
     if (!formNombre || !areaActiva) return
     if (formTipo === 'ratio' && (!formComponenteA.trim() || !formComponenteB.trim())) return
+    const meta = parseFloat(formMeta)
+    if (!metaValida(formTipo, meta)) {
+      setFormMetaError(formTipo === 'directo' ? 'La meta debe ser un número mayor o igual a 0.' : 'La meta debe ser un número mayor que 0.')
+      return
+    }
     const {data: {user}} = await supabase.auth.getUser()
     if (!user) return
     setSaving(true)
@@ -292,7 +342,6 @@ export default function KPIsPage() {
       ? { tipo: 'ratio', componenteA: formComponenteA.trim(), componenteB: formComponenteB.trim() }
       : { tipo: 'directo' }
     const id = crypto.randomUUID()
-    const meta = parseFloat(formMeta) || 0
     const { error } = await supabase.from('kpis_empresa').insert({
       id, user_id: user.id, nombre: formNombre, area: areaActiva, unidad: formUnidad,
       meta, actual: 0, descripcion: formDesc, estandar: false,
@@ -307,7 +356,7 @@ export default function KPIsPage() {
     }])
     setFormNombre(''); setFormUnidad('porcentaje'); setFormMeta('')
     setFormTipo('directo'); setFormComponenteA(''); setFormComponenteB('')
-    setFormDesc(''); setFormEsInverso(false)
+    setFormDesc(''); setFormEsInverso(false); setFormMetaError('')
     setShowCrear(false)
   }
 
@@ -344,6 +393,26 @@ export default function KPIsPage() {
     if (error) return
     setKpis(prev => prev.map(k => k.id === kpi.id ? { ...k, actual: val } : k))
     setEditando(null)
+  }
+
+  function abrirEditarMeta(kpi: KPI) {
+    setEditandoMeta(kpi.id)
+    setMetaEditValue(kpi.meta.toLocaleString('es-CL'))
+    setMetaEditError('')
+  }
+
+  async function guardarMeta(kpi: KPI) {
+    const meta = parseNumCL(metaEditValue)
+    if (!metaValida(kpi.formula.tipo, meta)) {
+      setMetaEditError(kpi.formula.tipo === 'directo' ? 'Debe ser un número ≥ 0.' : 'Debe ser un número > 0.')
+      return
+    }
+    setSaving(true)
+    const { error } = await supabase.from('kpis_empresa').update({ meta }).eq('id', kpi.id)
+    setSaving(false)
+    if (error) return
+    setKpis(prev => prev.map(k => k.id === kpi.id ? { ...k, meta } : k))
+    setEditandoMeta(null)
   }
 
   async function eliminar(id: string) {
@@ -410,7 +479,14 @@ export default function KPIsPage() {
         .kpi-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
         .kpi-valores{text-align:right}
         .kpi-actual{font-family:'Playfair Display',serif;font-size:22px;font-weight:400;line-height:1}
-        .kpi-meta-label{font-size:11px;color:var(--txt-2);margin-top:2px}
+        .kpi-meta-label{font-size:11px;color:var(--txt-2);margin-top:2px;display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+        .btn-edit-meta{background:none;border:none;color:var(--txt-2);cursor:pointer;font-size:11px;padding:0;line-height:1}
+        .btn-edit-meta:hover{color:var(--amber)}
+        .field-inline-meta{width:84px;padding:3px 6px;border:1px solid var(--amber-dim,rgba(217,119,6,0.2));background:var(--bg);color:var(--txt-1);font-family:'DM Mono',monospace;font-size:12px;outline:none;border-radius:0}
+        .field-inline-meta:focus{border-color:var(--amber)}
+        .btn-meta-mini{background:none;border:1px solid var(--brd);color:var(--txt-2);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:0}
+        .btn-meta-mini:hover{border-color:var(--amber);color:var(--amber)}
+        .error-msg{color:#EF4444;font-size:12px;margin-top:4px}
         .kpi-actions{display:flex;gap:6px}
         .btn-mini{padding:4px 10px;border:1px solid var(--brd);background:transparent;color:var(--txt-2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;border-radius:0}
         .btn-mini:hover{border-color:var(--amber);color:var(--amber)}
@@ -443,6 +519,10 @@ export default function KPIsPage() {
         .field::placeholder{color:var(--txt-2)}
         select.field{cursor:pointer}
         .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
+        .confirm-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surf-2);border:1px solid var(--brd);padding:28px;width:320px;max-width:90vw;z-index:151}
+        .confirm-title{font-size:15px;font-weight:500;color:var(--txt-1);margin-bottom:4px}
+        .confirm-sub{font-size:12px;color:var(--txt-2);margin-bottom:18px;line-height:1.5}
+        .confirm-actions{display:flex;gap:10px;margin-top:16px}
         @media(max-width:768px){.layout{grid-template-columns:1fr}.main{padding:20px 16px}.panel{width:100%}.areas-overview{grid-template-columns:1fr 1fr}}
       `}</style>
 
@@ -568,8 +648,27 @@ export default function KPIsPage() {
                                 {kpi.actual > 0 ? formatVal(kpi, kpi.actual) : '—'}
                               </div>
                               <div className="kpi-meta-label">
-                                {kpi.actual > 0 ? `${textoCumplimiento(kpi, pct)} · meta ${formatVal(kpi, kpi.meta)}` : `Meta: ${kpi.meta > 0 ? formatVal(kpi, kpi.meta) : 'sin definir'}`}
+                                {editandoMeta === kpi.id ? (
+                                  <>
+                                    <input
+                                      className="field-inline-meta"
+                                      value={metaEditValue}
+                                      autoFocus
+                                      onChange={e => setMetaEditValue(e.target.value)}
+                                      onBlur={e => setMetaEditValue(fmtInputNum(e.target.value))}
+                                      onKeyDown={e => { if (e.key === 'Enter') guardarMeta(kpi) }}
+                                    />
+                                    <button className="btn-meta-mini" onClick={() => guardarMeta(kpi)} title="Guardar meta">✓</button>
+                                    <button className="btn-meta-mini" onClick={() => setEditandoMeta(null)} title="Cancelar">✕</button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>{kpi.actual > 0 ? `${textoCumplimiento(kpi, pct)} · meta ${formatVal(kpi, kpi.meta)}` : `Meta: ${formatVal(kpi, kpi.meta)}`}</span>
+                                    <button className="btn-edit-meta" onClick={() => abrirEditarMeta(kpi)} title="Editar meta">✎</button>
+                                  </>
+                                )}
                               </div>
+                              {editandoMeta === kpi.id && metaEditError && <div className="error-msg" style={{textAlign: 'right'}}>{metaEditError}</div>}
                             </div>
                             <div className="kpi-actions">
                               <button className="btn-mini" onClick={() => toggleEditar(kpi)}>
@@ -667,12 +766,40 @@ export default function KPIsPage() {
               <p style={{fontSize:'13px',color:'var(--txt-2)'}}>Ya tienes todos los KPIs sugeridos para esta área.</p>
             ) : (
               bibliotecaArea.map((k, i) => (
-                <div key={i} className="bib-item" onClick={() => { agregarDesdeBiblioteca(k); setShowBiblioteca(false) }}>
+                <div key={i} className="bib-item" onClick={() => abrirInstalar(k)}>
                   <div className="bib-nombre">{k.nombre}</div>
                   <div className="bib-ratio">{formulaTexto(k) ? `= ${formulaTexto(k)}` : 'Valor directo'}</div>
                 </div>
               ))
             )}
+          </div>
+        </>
+      )}
+
+      {/* Confirmación de instalación con meta editable */}
+      {instalando && (
+        <>
+          <div className="overlay" style={{zIndex: 150}} onClick={() => setInstalando(null)} />
+          <div className="confirm-box">
+            <div className="confirm-title">Instalar “{instalando.nombre}”</div>
+            <p className="confirm-sub">Puedes ajustar la meta sugerida antes de instalarlo.</p>
+            <div className="field-group">
+              <label className="field-label">Meta ({UNIDAD_LABELS[instalando.unidad]})</label>
+              <input
+                className="field"
+                value={metaInstalar}
+                autoFocus
+                onChange={e => { setMetaInstalar(e.target.value); setMetaInstalarError('') }}
+                onBlur={e => setMetaInstalar(fmtInputNum(e.target.value))}
+              />
+              {metaInstalarError && <div className="error-msg">{metaInstalarError}</div>}
+            </div>
+            <div className="confirm-actions">
+              <button className="btn-outline" style={{flex: 1}} onClick={() => setInstalando(null)}>Cancelar</button>
+              <button className="btn-amber" style={{flex: 1}} onClick={confirmarInstalar} disabled={saving}>
+                {saving ? 'Instalando...' : 'Instalar'}
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -699,8 +826,9 @@ export default function KPIsPage() {
               </select>
             </div>
             <div className="field-group">
-              <label className="field-label">Meta</label>
-              <input className="field" type="number" placeholder="Ej: 95" value={formMeta} onChange={e => setFormMeta(e.target.value)} />
+              <label className="field-label">Meta *</label>
+              <input className="field" type="number" placeholder="Ej: 95" value={formMeta} onChange={e => { setFormMeta(e.target.value); setFormMetaError('') }} />
+              {formMetaError && <div className="error-msg">{formMetaError}</div>}
             </div>
             <div className="field-group">
               <label className="field-label">Tipo de indicador *</label>
