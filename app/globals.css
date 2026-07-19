@@ -1,22 +1,67 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ============================================================
+   EOM Design System — Luxury FinTech Glassmorphism
+   ============================================================ */
+
+:root {
+  --eom-bg:             #0A0A0A;
+  --eom-bg-glass:       rgba(255, 255, 255, 0.035);
+  --eom-bg-sidebar:     rgba(255, 255, 255, 0.018);
+  --eom-border:         rgba(255, 255, 255, 0.07);
+  --eom-border-sidebar: rgba(255, 255, 255, 0.055);
+  --eom-border-gold:    rgba(201, 169, 110, 0.20);
+  --eom-gold:           #C9A96E;
+  --eom-gold-light:     #E8C99A;
+  --eom-gold-dim:       rgba(201, 169, 110, 0.10);
+  --eom-text-1:         #F5F5F7;
+  --eom-text-2:         rgba(245, 245, 247, 0.45);
+  --eom-text-3:         rgba(245, 245, 247, 0.28);
+  --eom-success:        #74C69D;
+  --eom-danger:         #D4816E;
+  --eom-blur:           blur(24px);
+}
+
+/* Glass utilities */
+.eom-glass {
+  background:               var(--eom-bg-glass);
+  backdrop-filter:          var(--eom-blur);
+  -webkit-backdrop-filter:  var(--eom-blur);
+  border:                   1px solid var(--eom-border);
+  border-radius:            14px;
+}
+
+.eom-glass-gold {
+  background:               var(--eom-gold-dim);
+  backdrop-filter:          var(--eom-blur);
+  -webkit-backdrop-filter:  var(--eom-blur);
+  border:                   1px solid var(--eom-border-gold);
+  border-radius:            14px;
+}
+
+/* Live dot animation */
+@keyframes eom-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
 :root[data-theme='dark'] {
-  --bg: #07090E;
-  --surf-1: #0C0F18;
-  --surf-2: #0C0F18;
-  --surf-3: #111520;
-  --brd: rgba(255,255,255,0.06);
-  --brd-2: rgba(255,255,255,0.12);
-  --txt-1: #E8EDF8;
-  --txt-2: #5A6888;
-  --txt-3: #8A9AB8;
-  --amber: #D97706;
-  --amber-light: #FCD34D;
-  --amber-dim: rgba(217,119,6,0.12);
-  --amber-border: rgba(217,119,6,0.25);
-  --green: #16A34A;
-  --green-light: #4ADE80;
-  --red: #EF4444;
+  --bg: var(--eom-bg);
+  --surf-1: var(--eom-bg-sidebar);
+  --surf-2: var(--eom-bg-glass);
+  --surf-3: rgba(255,255,255,0.06);
+  --brd: var(--eom-border);
+  --brd-2: rgba(255,255,255,0.14);
+  --txt-1: var(--eom-text-1);
+  --txt-2: var(--eom-text-3);
+  --txt-3: var(--eom-text-2);
+  --amber: var(--eom-gold);
+  --amber-light: var(--eom-gold-light);
+  --amber-dim: var(--eom-gold-dim);
+  --amber-border: var(--eom-border-gold);
+  --green: var(--eom-success);
+  --green-light: var(--eom-success);
+  --red: var(--eom-danger);
 }
 
 :root[data-theme='light'] {
