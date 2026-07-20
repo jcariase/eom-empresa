@@ -118,16 +118,15 @@ export default function Sidebar({ empresaNombre }: { empresaNombre?: string }) {
           background:var(--eom-bg-sidebar);backdrop-filter:var(--eom-blur);-webkit-backdrop-filter:var(--eom-blur);
           border-right:1px solid var(--eom-border-sidebar);overflow:hidden;position:relative;z-index:10;
         }
-        .logo-mark{font-family:'Playfair Display',serif;font-size:16px;color:#F5F5F7 !important;padding:0 7px 24px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
+        .logo-mark{font-family:'Playfair Display',serif;font-size:16px;padding:0 7px 24px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer}
         .mark{width:24px;height:24px;border-radius:6px;background:linear-gradient(145deg,var(--eom-gold),#8B6B3D);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0A0A0A;flex-shrink:0}
-        .nav-item{padding:9px 7px;font-size:13px;color:rgba(245,245,247,0.65) !important;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;border-radius:9px}
-        .nav-item:hover{color:var(--txt-1) !important;background:var(--eom-bg-glass)}
-        .nav-item.active{color:#E8C99A !important;background:var(--eom-gold-dim)}
+        .nav-item{padding:9px 7px;font-size:13px;cursor:pointer;transition:background 0.15s;display:flex;align-items:center;gap:10px;border-radius:9px}
+        .nav-item:hover{background:var(--eom-bg-glass)}
+        .nav-item.active{background:var(--eom-gold-dim)}
         .nav-item-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .nav-section{padding:16px 7px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(245,245,247,0.45) !important}
+        .nav-section{padding:16px 7px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase}
         .sidebar-bottom{margin-top:auto;padding:16px 7px 0;border-top:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;gap:10px}
-        .btn-logout{background:none;border:none;color:rgba(245,245,247,0.5) !important;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
-        .btn-logout:hover{color:var(--txt-1) !important}
+        .btn-logout{background:none;border:none;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0}
         .btn-theme{background:none;border:1px solid var(--brd-2);color:var(--txt-2);font-size:13px;cursor:pointer;padding:5px 9px;border-radius:8px;line-height:1}
         .btn-theme:hover{color:var(--eom-gold);border-color:var(--eom-border-gold)}
 
@@ -152,28 +151,32 @@ export default function Sidebar({ empresaNombre }: { empresaNombre?: string }) {
 
       {/* Sidebar desktop / tablet */}
       <aside className="eom-sidebar">
-        <div className="logo-mark" onClick={() => router.push('/dashboard')} title="EOM OS">
+        <div className="logo-mark" style={{ color: '#F5F5F7' }} onClick={() => router.push('/dashboard')} title="EOM OS">
           <div className="mark">E</div>
           <span className="logo-text">{empresaNombre || 'EOM OS'}</span>
         </div>
         {NAV_ITEMS.map(section => (
           <div key={section.section}>
-            <div className="nav-section">{section.section}</div>
-            {section.items.map(item => (
-              <div
-                key={item.path}
-                className={`nav-item eom-nav-item ${pathname === item.path ? 'active' : ''}`}
-                onClick={() => router.push(item.path)}
-                title={item.label}
-              >
-                <span className="nav-item-icon">{ICONS[item.key]}</span>
-                <span className="nav-item-text">{item.label}</span>
-              </div>
-            ))}
+            <div className="nav-section" style={{ color: 'rgba(245,245,247,0.45)' }}>{section.section}</div>
+            {section.items.map(item => {
+              const isActive = pathname === item.path
+              return (
+                <div
+                  key={item.path}
+                  className={`nav-item eom-nav-item ${isActive ? 'active' : ''}`}
+                  style={{ color: isActive ? '#E8C99A' : 'rgba(245,245,247,0.65)' }}
+                  onClick={() => router.push(item.path)}
+                  title={item.label}
+                >
+                  <span className="nav-item-icon">{ICONS[item.key]}</span>
+                  <span className="nav-item-text">{item.label}</span>
+                </div>
+              )
+            })}
           </div>
         ))}
         <div className="sidebar-bottom">
-          <button className="btn-logout" onClick={cerrarSesion} title="Cerrar sesión">Cerrar sesión</button>
+          <button className="btn-logout" style={{ color: 'rgba(245,245,247,0.5)' }} onClick={cerrarSesion} title="Cerrar sesión">Cerrar sesión</button>
           <button className="btn-theme" onClick={toggleTheme} title="Cambiar tema">{theme === 'dark' ? '☀' : '☾'}</button>
         </div>
       </aside>
